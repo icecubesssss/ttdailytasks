@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { CalendarDays, Cpu, ListTree, Sparkles } from 'lucide-react';
-import ProductivityReport from './ProductivityReport.jsx';
+import ProductivityReport from './ProductivityReport';
 import { TeamMembersList, AppPreferences, FocusAutomation } from './subcomponents/StatsComponents';
 import DailyQuestWidget from './widgets/DailyQuestWidget.jsx';
 import MascotAssistantWidget from './widgets/MascotAssistantWidget.jsx';
@@ -86,7 +86,7 @@ export default function StatsView({
 
       {/* Hero tile */}
       <div className="md:col-span-6">
-        <ProductivityReport tasks={tasks} userData={userData} isDark={isDark} />
+        <ProductivityReport tasks={tasks} userData={userData} isDark={isDark} teamMembers={teamMembers} />
       </div>
 
       {/* Team tile */}

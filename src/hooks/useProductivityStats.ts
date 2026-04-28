@@ -4,7 +4,7 @@ import {
   format, isSameDay, getHours, isWithinInterval, subWeeks, subMonths 
 } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { Task } from '../utils/helpers';
+import { Task, TeamMember, getLegacyIdByEmail } from '../utils/helpers';
 
 const WEEK_STARTS_ON = 1;
 
@@ -41,8 +41,25 @@ export interface ProductivityStats {
   totalFocusMs: number;
 }
 
-export function useProductivityStats(tasks: Task[], timeRange: 'week' | 'month'): ProductivityStats {
+export function useProductivityStats(tasks: Task[], timeRange: 'week' | 'month', teamMembers: TeamMember[] = []): ProductivityStats {
   return useMemo(() => {
+    const normalizeAssignee = (task: Task): 'tit' | 'tun' | 'unknown' => {
+      const assigneeId = task.assigneeId?.toLowerCase().trim();
+      const assigneeName = task.assigneeName?.toLowerCase().trim();
+
+      if (assigneeId === 'tit' || assigneeId === 'tun') return assigneeId;
+      if (assigneeId) {
+        const memberByUid = teamMembers.find(m => m?.uid?.toLowerCase() === assigneeId);
+        const legacyFromUid = getLegacyIdByEmail(memberByUid?.email);
+        if (legacyFromUid === 'tit' || legacyFromUid === 'tun') return legacyFromUid;
+      }
+
+      if (assigneeName?.includes('tít') || assigneeName?.includes('tit')) return 'tit';
+      if (assigneeName?.includes('tún') || assigneeName?.includes('tun')) return 'tun';
+
+      return 'unknown';
+    };
+
     const now = new Date();
     let currentStart: Date, currentEnd: Date, previousStart: Date, previousEnd: Date;
     
@@ -73,8 +90,8 @@ export function useProductivityStats(tasks: Task[], timeRange: 'week' | 'month')
     const onTimeTasks = completedTasks.filter(t => t.status === 'completed');
     const onTimeRate = completedTasks.length > 0 ? Math.round((onTimeTasks.length / completedTasks.length) * 100) : 0;
 
-    const titTasks = currentTasks.filter(t => t.assigneeId === 'tit');
-    const tunTasks = currentTasks.filter(t => t.assigneeId === 'tun');
+    const titTasks = currentTasks.filter(t => normalizeAssignee(t) === 'tit');
+    const tunTasks = currentTasks.filter(t => normalizeAssignee(t) === 'tun');
 
     const formatTime = (ms: number) => {
       if (ms === 0) return '0m';
@@ -87,8 +104,8 @@ export function useProductivityStats(tasks: Task[], timeRange: 'week' | 'month')
     if (timeRange === 'week') {
       eachDayOfInterval(currentInterval).forEach(d => {
         const dayTasks = currentTasks.filter(t => isSameDay(getTaskDate(t), d));
-        const titMs = dayTasks.filter(t => t.assigneeId === 'tit').reduce((acc, t) => acc + t.totalTrackedTime, 0);
-        const tunMs = dayTasks.filter(t => t.assigneeId === 'tun').reduce((acc, t) => acc + t.totalTrackedTime, 0);
+        const titMs = dayTasks.filter(t => normalizeAssignee(t) === 'tit').reduce((acc, t) => acc + t.totalTrackedTime, 0);
+        const tunMs = dayTasks.filter(t => normalizeAssignee(t) === 'tun').reduce((acc, t) => acc + t.totalTrackedTime, 0);
         distribution.push({ label: format(d, 'EEE', { locale: vi }), value: titMs + tunMs, titMs, tunMs });
       });
     } else {
@@ -98,8 +115,8 @@ export function useProductivityStats(tasks: Task[], timeRange: 'week' | 'month')
         let eow = endOfWeek(curr, { weekStartsOn: WEEK_STARTS_ON });
         if(eow > currentEnd) eow = currentEnd;
         const weekTasks = currentTasks.filter(t => isWithinInterval(getTaskDate(t), {start: curr, end: eow}));
-        const titMs = weekTasks.filter(t => t.assigneeId === 'tit').reduce((acc, t) => acc + t.totalTrackedTime, 0);
-        const tunMs = weekTasks.filter(t => t.assigneeId === 'tun').reduce((acc, t) => acc + t.totalTrackedTime, 0);
+        const titMs = weekTasks.filter(t => normalizeAssignee(t) === 'tit').reduce((acc, t) => acc + t.totalTrackedTime, 0);
+        const tunMs = weekTasks.filter(t => normalizeAssignee(t) === 'tun').reduce((acc, t) => acc + t.totalTrackedTime, 0);
         distribution.push({ label: `T${weekNum}`, value: titMs + tunMs, titMs, tunMs });
         curr = new Date(eow.getTime() + 86400000);
         weekNum++;
@@ -111,8 +128,9 @@ export function useProductivityStats(tasks: Task[], timeRange: 'week' | 'month')
     const hours: HourData[] = Array(24).fill(null).map(() => ({ tit: 0, tun: 0, total: 0 }));
     currentTasks.forEach(t => {
       const h = getHours(getTaskDate(t));
-      if (t.assigneeId === 'tit') hours[h].tit += t.totalTrackedTime;
-      else if (t.assigneeId === 'tun') hours[h].tun += t.totalTrackedTime;
+      const assignee = normalizeAssignee(t);
+      if (assignee === 'tit') hours[h].tit += t.totalTrackedTime;
+      else if (assignee === 'tun') hours[h].tun += t.totalTrackedTime;
       hours[h].total += t.totalTrackedTime;
     });
     const maxHourMs = Math.max(...hours.map(h => h.total), 1);
@@ -139,5 +157,5 @@ export function useProductivityStats(tasks: Task[], timeRange: 'week' | 'month')
       bestDayMs: formatTime(bestDayMsValue),
       totalFocusMs
     };
-  }, [tasks, timeRange]);
+  }, [tasks, timeRange, teamMembers]);
 }

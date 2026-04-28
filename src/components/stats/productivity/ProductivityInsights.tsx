@@ -1,7 +1,18 @@
-import React from 'react';
 import { Target, Clock, TrendingUp, TrendingDown } from 'lucide-react';
+import type { ProductivityStats } from '../../../hooks/useProductivityStats';
 
-export function GoalProgressCard({ stats, timeRange, isDark }) {
+interface GoalProgressCardProps {
+  stats: ProductivityStats;
+  timeRange: 'week' | 'month';
+  isDark: boolean;
+}
+
+interface ProductivityInsightsProps {
+  stats: ProductivityStats;
+  isDark: boolean;
+}
+
+export function GoalProgressCard({ stats, timeRange, isDark }: GoalProgressCardProps) {
   const goalMs = timeRange === 'week' ? 10 * 3600000 : 40 * 3600000;
   const progressPct = Math.min(Math.round((stats.totalFocusMs / goalMs) * 100), 100);
 
@@ -23,7 +34,7 @@ export function GoalProgressCard({ stats, timeRange, isDark }) {
   );
 }
 
-export function ProductivityInsights({ stats, isDark }) {
+export function ProductivityInsights({ stats, isDark }: ProductivityInsightsProps) {
   return (
     <div className="md:col-span-2 grid grid-cols-2 md:grid-cols-3 gap-4">
       <div className={`p-5 rounded-[2rem] flex flex-col justify-center items-center text-center ${isDark ? 'bg-slate-800/40 border border-slate-700/50' : 'bg-white border border-slate-100 shadow-sm'}`}>

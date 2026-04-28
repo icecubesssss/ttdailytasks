@@ -19,6 +19,8 @@ Mode: Feature-first, refactor opportunistic only.
    - `src/hooks/useAppBootstrap.ts`, `src/contexts/TaskContext.tsx`: còn `as unknown as` để bridge giữa local dummy/auth-subtask shape và type chính.
 
 ## Done Log
+- 2026-04-28: Stats Phase 2+3 complete - wired `teamMembers` into productivity stats flow (`StatsView.jsx` -> `ProductivityReport.jsx` -> `useProductivityStats.ts`), added `uid -> email -> legacy (tit/tun)` mapping and `unknown` fallback guard to keep charts stable with mixed/dirty assignee data.
+- 2026-04-28: Stats Phase 1 patch complete - normalized assignee mapping in `useProductivityStats.ts` via safe helper (`assigneeId`/`assigneeName` -> `tit|tun|unknown`) and applied across totals/distribution/hours/late metrics; mixed/empty assignee no longer breaks chart split.
 - 2026-04-28: Foundation type fixes + build/lint xanh.
 - 2026-04-28: Convert `useTaskActions` sang TS, remove duplicate `useTTApp.js`.
 - 2026-04-28: Convert 7 layout components sang TSX.

@@ -25,3 +25,7 @@ dist-ssr
 
 # Temporary AI/context artifacts
 tmp/
+
+# Firebase admin key (local only)
+service-account*.json
+*.service-account.json

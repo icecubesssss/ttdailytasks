@@ -8,7 +8,10 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "pack": "repomix"
+    "pack": "repomix",
+    "migrate:assignee": "node scripts/migrate-assignee.mjs",
+    "migrate:assignee:dry": "node scripts/migrate-assignee-admin.mjs",
+    "migrate:assignee:apply": "node scripts/migrate-assignee-admin.mjs --apply"
   },
   "dependencies": {
     "canvas-confetti": "^1.9.4",
@@ -32,6 +35,7 @@
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
+    "firebase-admin": "^13.8.0",
     "globals": "^17.4.0",
     "postcss": "^8.5.8",
     "repomix": "^1.13.1",
