@@ -1,0 +1,96 @@
+/* === TT Focus Guard - YouTube Distraction Free Mode === */
+
+/* 1. Ẩn toàn bộ video đề xuất ở trang chủ */
+html.tt-youtube-focus ytd-browse[page-subtype="home"] ytd-rich-grid-renderer {
+  display: none !important;
+}
+
+/* Thêm một câu nhắc nhở ở trang chủ thay cho video */
+html.tt-youtube-focus ytd-browse[page-subtype="home"] #primary::after {
+  content: "😎 Chế độ tập trung đang bật. Hãy dùng thanh tìm kiếm để tìm chính xác thứ bạn cần!";
+  display: block;
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+  margin-top: 15vh;
+  color: #64748B;
+  padding: 40px;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px dashed rgba(99, 102, 241, 0.4);
+  border-radius: 20px;
+}
+
+/* 2. Ẩn Shorts ở khắp mọi nơi */
+html.tt-youtube-focus ytd-reel-shelf-renderer,
+html.tt-youtube-focus ytd-rich-shelf-renderer,
+html.tt-youtube-focus a[title="Shorts"],
+html.tt-youtube-focus a[href^="/shorts/"],
+html.tt-youtube-focus ytd-mini-guide-entry-renderer[aria-label="Shorts"],
+html.tt-youtube-focus ytd-guide-entry-renderer a[title="Shorts"] {
+  display: none !important;
+}
+
+/* 3. Ẩn cột video liên quan bên phải khi đang xem video */
+html.tt-youtube-focus #secondary,
+html.tt-youtube-focus #secondary-inner {
+  display: none !important;
+}
+
+/* Mở rộng video khi đã ẩn cột bên phải */
+html.tt-youtube-focus ytd-watch-flexy[flexy] #primary.ytd-watch-flexy {
+  max-width: 1200px !important;
+  margin: 0 auto !important;
+  padding-right: 0 !important;
+}
+
+/* 4. Ẩn phần bình luận (tránh trôi xuống đọc cmt quên code) */
+html.tt-youtube-focus #comments,
+html.tt-youtube-focus ytd-comments {
+  display: none !important;
+}
+
+/* 5. Ẩn các video hiện lên màn hình khi xem xong */
+html.tt-youtube-focus .ytp-endscreen-content {
+  display: none !important;
+}
+
+/* 6. Ẩn tab Khám phá / Thịnh hành ở menu trái */
+html.tt-youtube-focus a[href^="/feed/explore"],
+html.tt-youtube-focus a[href^="/feed/trending"] {
+  display: none !important;
+}
+
+/* 7. TT Download Button Styles */
+.tt-download-btn {
+  background: rgba(99, 102, 241, 0.1) !important;
+  border: 1px solid rgba(99, 102, 241, 0.2) !important;
+  color: #818CF8 !important;
+  border-radius: 18px !important;
+  padding: 0 16px !important;
+  height: 36px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin-left: 8px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  text-transform: none !important;
+  font-family: inherit !important;
+}
+
+.tt-download-btn:hover {
+  background: rgba(99, 102, 241, 0.2) !important;
+  border-color: rgba(99, 102, 241, 0.4) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+.tt-download-btn svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+/* Hide when not in focus mode? No, always show for convenience */

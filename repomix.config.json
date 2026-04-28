@@ -1,0 +1,38 @@
+{
+  "output": {
+    "filePath": "repomix-output.md",
+    "style": "markdown",
+    "removeComments": true,
+    "removeEmptyLines": true,
+    "topFilesLength": 5
+  },
+  "ignore": {
+    "customPatterns": [
+      "node_modules/**",
+      "dist/**",
+      "build/**",
+      ".git/**",
+      "package-lock.json",
+      "yarn.lock",
+      "public/**",
+      "*.log",
+      "*.zip",
+      "backup_cleanup/**",
+      "account.json",
+      "lint_output.txt",
+      "*.svg",
+      "*.png",
+      "*.jpg",
+      "*.jpeg",
+      "*.gif",
+      "*.webp",
+      "repomix-output.md",
+      "src/assets/**"
+    ],
+    "useGitignore": true,
+    "useDefaultPatterns": true
+  },
+  "security": {
+    "enableChecking": true
+  }
+}

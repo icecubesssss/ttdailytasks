@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TT Focus Guard</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <div class="logo">🛡️</div>
+        <div>
+          <h1>TT Focus Guard</h1>
+          <p class="subtitle">Bảo vệ sự tập trung của bạn</p>
+        </div>
+      </div>
+      <div class="status-dot" id="statusDot"></div>
+    </div>
+
+    <!-- Info Banner -->
+    <div class="info-banner" id="infoBanner">
+      <span class="info-icon" id="bannerIcon">⏸️</span>
+      <span class="info-text" id="bannerText">Đang rảnh rỗi chờ Task mới...</span>
+    </div>
+    
+    <!-- Timer -->
+    <div class="timer-section" id="timerSection" style="display: none;">
+      <div class="timer-display" id="timerDisplay">00:00:00</div>
+      <div class="timer-task" id="timerTask"></div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <div class="stat-item">
+        <span class="stat-value" id="statSessions">0</span>
+        <span class="stat-label">Phiên</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-value" id="statTime">0h</span>
+        <span class="stat-label">Tổng giờ</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-value" id="statBlocked">0</span>
+        <span class="stat-label">Đã chặn</span>
+      </div>
+    </div>
+
+    <!-- Blocked Sites -->
+    <div class="sites-section">
+      <div class="sites-header">
+        <h2>Danh sách chặn</h2>
+        <span class="sites-count" id="sitesCount">0 trang</span>
+      </div>
+      
+      <div class="sites-list" id="sitesList">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Add Site -->
+      <form class="add-site-form" id="addSiteForm">
+        <input type="text" id="newSiteInput" placeholder="Thêm trang web (vd: zalo.me)" autocomplete="off">
+        <button type="submit" id="addSiteBtn">+</button>
+      </form>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <span>✨ Tích hợp với TT Daily Task</span>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
