@@ -42,6 +42,11 @@ const keyPathArg = getArgValue('--service-account');
 const keyPathEnv = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
 const keyPath = keyPathArg || keyPathEnv;
 
+const teamPathArg = getArgValue('--team-path');
+const tasksPathArg = getArgValue('--tasks-path');
+const titUidArg = getArgValue('--tit-uid');
+const tunUidArg = getArgValue('--tun-uid');
+
 if (!keyPath) {
   console.error('Missing service account path. Use --service-account <path> or FIREBASE_SERVICE_ACCOUNT_PATH in .env');
   process.exit(1);
@@ -71,12 +76,43 @@ function normalizeEmail(email) {
   return typeof email === 'string' ? email.trim().toLowerCase() : '';
 }
 
+async function loadFirstNonEmptyCollection(paths) {
+  const tried = [];
+  for (const p of paths) {
+    const snap = await db.collection(p).get();
+    tried.push(`${p} (${snap.size})`);
+    if (!snap.empty) return { path: p, snap, tried };
+  }
+  return { path: paths[0], snap: await db.collection(paths[0]).get(), tried };
+}
+
 async function main() {
-  const teamRef = db.collection(`artifacts/${appId}/public/data/teamMembers`);
-  const teamSnap = await teamRef.get();
+  const teamPaths = teamPathArg
+    ? [teamPathArg]
+    : [
+        `artifacts/${appId}/public/data/teamMembers`,
+        `artifacts/${appId}/teamMembers`,
+        'users'
+      ];
+
+  const tasksPaths = tasksPathArg
+    ? [tasksPathArg]
+    : [
+        `artifacts/${appId}/public/data/tasks`,
+        `artifacts/${appId}/tasks`
+      ];
+
+  const teamLoad = await loadFirstNonEmptyCollection(teamPaths);
+  const teamPathUsed = teamLoad.path;
+  const teamSnap = teamLoad.snap;
+
+  const tasksLoad = await loadFirstNonEmptyCollection(tasksPaths);
+  const tasksPathUsed = tasksLoad.path;
+  const tasksSnap = tasksLoad.snap;
 
   const emailToUid = new Map();
   const uidSet = new Set();
+  const explicitUidMap = new Map();
 
   teamSnap.forEach((d) => {
     const data = d.data() || {};
@@ -86,8 +122,8 @@ async function main() {
     if (uid && email) emailToUid.set(email, uid);
   });
 
-  const tasksRef = db.collection(`artifacts/${appId}/public/data/tasks`);
-  const tasksSnap = await tasksRef.get();
+  if (titUidArg) explicitUidMap.set('tit', titUidArg.trim());
+  if (tunUidArg) explicitUidMap.set('tun', tunUidArg.trim());
 
   const updates = [];
   let scanned = 0;
@@ -116,7 +152,7 @@ async function main() {
       return;
     }
 
-    const mappedUid = emailToUid.get(legacyEmailMap[key]);
+    const mappedUid = explicitUidMap.get(key) || emailToUid.get(legacyEmailMap[key]);
     if (!mappedUid) {
       skippedUnknown += 1;
       return;
@@ -129,7 +165,14 @@ async function main() {
   console.log(`- Mode: ${mode}`);
   console.log(`- Project: ${projectId || serviceAccount.project_id}`);
   console.log(`- appId: ${appId}`);
+  console.log(`- Team path used: ${teamPathUsed}`);
+  console.log(`- Team paths tried: ${teamLoad.tried.join(' | ')}`);
+  console.log(`- Tasks path used: ${tasksPathUsed}`);
+  console.log(`- Tasks paths tried: ${tasksLoad.tried.join(' | ')}`);
   console.log(`- Team members loaded: ${uidSet.size}`);
+  console.log(`- Team members with email: ${emailToUid.size}`);
+  console.log(`- Explicit tit UID: ${titUidArg ? titUidArg : '(none)'}`);
+  console.log(`- Explicit tun UID: ${tunUidArg ? tunUidArg : '(none)'}`);
   console.log(`- Tasks scanned: ${scanned}`);
   console.log(`- Already UID: ${alreadyUid}`);
   console.log(`- Candidate migrated: ${updates.length}`);
@@ -146,6 +189,7 @@ async function main() {
     return;
   }
 
+  const tasksRef = db.collection(tasksPathUsed);
   const chunkSize = 400;
   for (let i = 0; i < updates.length; i += chunkSize) {
     const chunk = updates.slice(i, i + chunkSize);
