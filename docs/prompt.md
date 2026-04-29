@@ -1,4 +1,18 @@
-Đọc `docs/GUIDELINES.md` + `docs/TECH_DEBT_BACKLOG.md` + `docs/architecture.md` + `docs/runbook.md` rồi làm bước tiếp theo an toàn nhất, chạy build+lint, báo ngắn.
+# Prompt cho AI
 
-Prompt siêu ngắn:
-`Đọc docs/prompt.md và làm theo đó.`
+## Prompt siêu ngắn (copy-paste):
+```
+Đọc docs/prompt.md và làm theo đó.
+```
+
+## Prompt đầy đủ (AI tự đọc file này và làm):
+Đọc 3 file sau theo thứ tự trước khi làm bất cứ gì:
+1. `docs/GUIDELINES.md` — quy tắc code, TypeScript rules, quality gates
+2. `docs/architecture.md` — stack, layout thư mục, runtime flow, rules
+3. `docs/runbook.md` — quy trình build/typecheck/lint/debug
+
+Sau đó:
+- Làm đúng task được yêu cầu, không mở rộng scope.
+- Chạy `npm run build` và `npm run lint` sau mỗi thay đổi.
+- Cập nhật `docs/architecture.md` nếu đổi contract module/hook/context.
+- Báo kết quả ngắn gọn: đã làm gì, kết quả build/lint ra sao.

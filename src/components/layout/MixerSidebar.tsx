@@ -1,22 +1,17 @@
 import React from 'react';
 import { X, Play, Plus, Trash2 } from 'lucide-react';
+import type { MusicTrackData } from '../../hooks/useFocusMusic';
 
-interface Track {
-  id: string;
-  title: string;
-  artist: string;
-  cover: string;
-  isCustom?: boolean;
-}
+interface Track extends MusicTrackData {}
 
 interface MixerSidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  tracks: Track[];
+  tracks: MusicTrackData[];
   currentTrackIdx: number;
   onSelectTrack: (idx: number) => void;
-  onFileUpload: (file: File) => void;
-  onDeleteTrack: (track: Track) => void;
+  onFileUpload: (file: File, selectedMood?: string) => Promise<void>;
+  onDeleteTrack: (track: MusicTrackData) => Promise<void>;
   onAddViaUrl: (url: string) => void;
   uploadProgress?: number;
 }

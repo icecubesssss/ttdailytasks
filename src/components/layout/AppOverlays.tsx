@@ -2,11 +2,11 @@ import React from 'react';
 import { AnimatePresence } from 'framer-motion';
 import FocusView from '../focus/FocusView';
 import ClosetView from '../shop/ClosetView.jsx';
-import DuoFocusBanner from '../focus/DuoFocusBanner.jsx';
+import DuoFocusBanner from '../focus/DuoFocusBanner';
 import Modal from '../../shared/Modal.jsx';
-import type { Task, UserData, LevelInfo, TeamMember } from '../../utils/helpers';
+import type { Task, UserData, LevelInfo, TeamMember, AvatarConfig } from '../../utils/helpers';
 
-type PartnerInfo = TeamMember | { displayName: string; email: string; avatarConfig?: unknown };
+type PartnerInfo = TeamMember | { displayName: string; email: string; avatarConfig?: AvatarConfig | null };
 
 interface FocusViewProps {
   task?: Task;
@@ -75,7 +75,7 @@ function AppOverlays({
           userData={userData}
           levelInfo={levelInfo}
           isDark={theme === 'dark'}
-          userEmail={userEmail}
+          userEmail={userEmail ?? ''}
           onEquipItem={handleEquipItem}
           onClose={() => setIsClosetOpen(false)}
         />

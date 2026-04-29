@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Repeat, MoreHorizontal, Music2 } from 'lucide-react';
 import { formatDuration } from '../../utils/helpers';
+import type { MusicTrackData } from '../../hooks/useFocusMusic';
 
 interface MusicTrack {
   cover?: string;
@@ -11,7 +12,7 @@ interface MusicTrack {
 interface MusicSidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  currentTrack?: MusicTrack;
+  currentTrack?: MusicTrackData | null;
   isPlaying: boolean;
   onTogglePlay: () => void;
   onNext: () => void;

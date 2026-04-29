@@ -1,10 +1,29 @@
 import React from 'react';
 import { formatDuration } from '../../utils/helpers';
 
-export default function TimerRing({ 
-  ringSize, ringCenter, ringRadius, ringCircumference, ringOffset, 
-  progress, displayTime, isCountdown, isPaused 
-}) {
+interface TimerRingProps {
+  ringSize: number;
+  ringCenter: number;
+  ringRadius: number;
+  ringCircumference: number;
+  ringOffset: number;
+  progress: number;
+  displayTime: number;
+  isCountdown: boolean;
+  isPaused: boolean;
+}
+
+export default function TimerRing({
+  ringSize,
+  ringCenter,
+  ringRadius,
+  ringCircumference,
+  ringOffset,
+  progress,
+  displayTime,
+  isCountdown,
+  isPaused
+}: TimerRingProps) {
   return (
     <div className="relative focus-ring-container mb-4 group">
       <div className="absolute inset-0 rounded-full bg-white/5 blur-3xl opacity-20 group-hover:opacity-40 transition-opacity duration-1000" />
@@ -40,9 +59,9 @@ export default function TimerRing({
         <circle
           cx={ringCenter + ringRadius * Math.cos(2 * Math.PI * progress)}
           cy={ringCenter + ringRadius * Math.sin(2 * Math.PI * progress)}
-          r="8" fill="white" 
+          r="8" fill="white"
           className={`drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] transition-all duration-1000 ease-linear
-            ${!isPaused ? 'animate-pulse' : ''}`} 
+            ${!isPaused ? 'animate-pulse' : ''}`}
         />
       </svg>
 

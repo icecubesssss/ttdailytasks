@@ -1,7 +1,12 @@
 import React from 'react';
 import { Music } from 'lucide-react';
 
-export default function MusicPrompt({ onConfirm, onCancel }) {
+interface MusicPromptProps {
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+export default function MusicPrompt({ onConfirm, onCancel }: MusicPromptProps) {
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-in fade-in duration-500">
       <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-md" onClick={onCancel} />

@@ -26,5 +26,4 @@ npm run dev
 - [docs/prompt.md](./docs/prompt.md)
 - [docs/runbook.md](./docs/runbook.md)
 - [docs/GUIDELINES.md](./docs/GUIDELINES.md)
-- [docs/TECH_DEBT_BACKLOG.md](./docs/TECH_DEBT_BACKLOG.md)
 - [docs/architecture.md](./docs/architecture.md)

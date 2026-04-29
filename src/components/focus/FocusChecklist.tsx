@@ -1,17 +1,38 @@
 import React from 'react';
 import { CheckCircle2, Plus } from 'lucide-react';
-import { getAvatarUrl } from '../../utils/helpers';
+import { getAvatarUrl, Task, UserData, SubTask } from '../../utils/helpers';
 
-export default function FocusChecklist({ 
-  task, userData, subTasks, subDone, showChecklist, 
-  onSubTaskToggle, onSubTaskAdd, subResetKey, newSubTaskRef 
-}) {
-  const handleAdd = (e) => {
+interface FocusChecklistProps {
+  task: Task;
+  userData: UserData;
+  subTasks: SubTask[];
+  subDone: number;
+  showChecklist: boolean;
+  onSubTaskToggle: (taskId: string, subId: string, type: 'toggle' | 'rename' | 'delete' | 'add', val?: string) => Promise<void>;
+  onSubTaskAdd: (taskId: string, subId: string | null, type: 'add', val: string) => Promise<void>;
+  subResetKey: string | number;
+  newSubTaskRef: React.RefObject<HTMLInputElement | null>;
+}
+
+export default function FocusChecklist({
+  task,
+  userData,
+  subTasks,
+  subDone,
+  showChecklist,
+  onSubTaskToggle,
+  onSubTaskAdd,
+  subResetKey,
+  newSubTaskRef
+}: FocusChecklistProps) {
+  const handleAdd = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const val = newSubTaskRef.current?.value?.trim();
     if (!val) return;
     onSubTaskAdd(task.id, null, 'add', val);
-    newSubTaskRef.current.value = '';
+    if (newSubTaskRef.current) {
+      newSubTaskRef.current.value = '';
+    }
   };
 
   return (

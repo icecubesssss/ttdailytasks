@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { User } from 'firebase/auth';
 import * as userService from '../services/userService';
 import { 
   getAssigneeIdByEmail, calculateLevel, TeamMember, UserData
@@ -6,9 +7,11 @@ import {
 import {
   DEFAULT_AVATARS, BOOSTER_DURATIONS, GOLD_PER_TASK, GOLD_PER_SUBTASK, 
   DAILY_CHECKIN_GOLD, XP_PER_TASK, DAILY_CHECKIN_XP, 
-  XP_PER_SUBTASK, SHOP_ITEMS
+  XP_PER_SUBTASK, SHOP_ITEMS, ShopItem
 } from '../utils/constants';
 import { useAppStore, defaultUserData } from '../store/useAppStore';
+
+type UserStatsUpdates = Partial<UserData> & Record<string, unknown>;
 
 const DEFAULT_SHORTCUT_NAME = 'Làm việc';
 type AssigneeKey = 'tit' | 'tun';
@@ -25,24 +28,24 @@ const getDefaultAvatarByEmail = (email: string | null | undefined, fallbackSeed?
 
 const ignoreAsyncError = () => undefined;
 
-export function useUserStats(user: any) {
-  const userData = useAppStore((state: any) => state.userData) as UserData;
-  const setUserData = useAppStore((state: any) => state.setUserData);
-  const patchUserData = useAppStore((state: any) => state.patchUserData);
+export function useUserStats(user: User | null) {
+  const userData = useAppStore((state) => state.userData);
+  const setUserData = useAppStore((state) => state.setUserData);
+  const patchUserData = useAppStore((state) => state.patchUserData);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 
   // 1. Sync User Stats
   useEffect(() => {
     if (!user || user.uid === "local-user-test") return;
-    const unsubscribe = userService.subscribeToUserStats(user.uid, async (data: any) => {
+    const unsubscribe = userService.subscribeToUserStats(user.uid, async (data: UserData | null) => {
       if (data) {
         let needsUpdate = false;
-        const updates: any = {};
+        const updates: UserStatsUpdates = {};
 
         if (data.streakFreezes === undefined) { updates.streakFreezes = 3; needsUpdate = true; }
         if (data.unlockedBadgeIds === undefined) { updates.unlockedBadgeIds = []; updates.lastSeenLevel = data.level || 1; needsUpdate = true; }
-        if (data.avatarConfig === undefined || data.avatarConfig?.avatarVersion !== 8) {
-          updates.avatarConfig = getDefaultAvatarByEmail(user.email, user.displayName);
+        if (data.avatarConfig === undefined || (data.avatarConfig as Record<string, unknown>)?.avatarVersion !== 8) {
+          updates.avatarConfig = getDefaultAvatarByEmail(user.email ?? undefined, user.displayName ?? undefined);
           needsUpdate = true;
         }
         if (data.ttGold === undefined) { updates.ttGold = 0; needsUpdate = true; }
@@ -66,7 +69,7 @@ export function useUserStats(user: any) {
           ttGold: 0, ticketHistory: [], checkInHistory: {}, autoFocusShortcut: true, 
           shortcutName: DEFAULT_SHORTCUT_NAME, offShortcutName: '', defaultView: 'tasks', 
           calendarVisibility: { tit: true, tun: true }, 
-          avatarConfig: getDefaultAvatarByEmail(user?.email, user?.displayName) 
+          avatarConfig: getDefaultAvatarByEmail(user?.email ?? undefined, user?.displayName ?? undefined) 
         };
         userService.initializeUserStats(user.uid, initial).catch(ignoreAsyncError);
         patchUserData({ ...initial, isLoaded: true });
@@ -121,12 +124,14 @@ export function useUserStats(user: any) {
     return () => clearInterval(interval);
   }, [userData.activeBooster, user, patchUserData]);
 
-  const handleUpdateSettings = async (updates: any) => {
+  const handleUpdateSettings = async (updates: UserStatsUpdates) => {
     patchUserData(updates);
     if (user && user.uid !== 'local-user-test') userService.updateUserStats(user.uid, updates).catch(ignoreAsyncError);
   };
 
-  const handleBuyItem = async (item: any) => {
+  const handleBuyItem = async (itemId: string) => {
+    const item = SHOP_ITEMS.find(i => i.id === itemId);
+    if (!item) return;
     if ((userData.ttGold || 0) < item.price) {
       alert("Bạn không đủ TT Gold để mua vật phẩm này! Hãy chăm chỉ làm việc thêm nhé.");
       return;
@@ -137,12 +142,12 @@ export function useUserStats(user: any) {
       return;
     }
 
-    let updates: any = { ttGold: (userData.ttGold || 0) - item.price };
+    let updates: UserStatsUpdates = { ttGold: (userData.ttGold || 0) - item.price };
     if (item.id === 'freeze') updates.streakFreezes = (userData.streakFreezes || 0) + 1;
     else if (item.type === 'booster') {
       const boosterType = item.boosterType as unknown;
       const durationMs = isBoosterType(boosterType) ? BOOSTER_DURATIONS[boosterType] : 0;
-      updates.activeBooster = { id: item.id, multiplier: item.multiplier, boosterType: item.boosterType, expiresAt: Date.now() + durationMs };
+      updates.activeBooster = { id: item.id, multiplier: item.multiplier ?? 1, boosterType: item.boosterType ?? '', expiresAt: Date.now() + durationMs };
     } else {
       if (userData.ownedItemIds?.includes(item.id) && item.type !== 'ticket') {
         alert("Bạn đã sở hữu vật phẩm này rồi!");
@@ -165,7 +170,7 @@ export function useUserStats(user: any) {
 
     const updates = {
       ownedItemIds: newOwned,
-      ticketHistory: [...(userData.ticketHistory || []), { id: crypto.randomUUID(), ticketId, name: item.name, usedAt: Date.now(), user: user.displayName || "Thành viên" }]
+      ticketHistory: [...(userData.ticketHistory || []), { id: crypto.randomUUID(), ticketId, name: item.name, usedAt: Date.now(), user: user?.displayName || "Thành viên" }]
     };
 
     patchUserData(updates);
@@ -173,7 +178,7 @@ export function useUserStats(user: any) {
     alert(`Đã kích hoạt ${item.name}! Hãy tận hưởng nhé ✨`);
   };
 
-  const handleEquipItem = async (category: string, val: any) => {
+  const handleEquipItem = async (category: string, val: unknown) => {
     const updates = { avatarConfig: { ...(userData.avatarConfig || {}), [category]: val } };
     patchUserData(updates);
     if (user && user.uid !== 'local-user-test') userService.updateUserStats(user.uid, updates).catch(ignoreAsyncError);
@@ -185,7 +190,7 @@ export function useUserStats(user: any) {
     try {
       const today = new Date().toDateString();
       let xpEarned = isLate ? Math.floor(XP_PER_TASK / 2) : XP_PER_TASK;
-      let statsUpdates: any = { xp: (userData.xp || 0) + xpEarned };
+      let statsUpdates: UserStatsUpdates = { xp: (userData.xp || 0) + xpEarned };
 
       if (userData.lastCheckIn !== today) {
         xpEarned += DAILY_CHECKIN_XP;

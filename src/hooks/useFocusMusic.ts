@@ -298,10 +298,10 @@ export function useFocusMusic(userData: UserData): UseFocusMusicReturn {
       });
       setUploadProgress(100);
       setTimeout(() => { setIsCaching(false); setUploadProgress(0); }, 1000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setIsCaching(false);
       setUploadProgress(0);
-      alert('Tải nhạc thất bại: ' + err.message);
+      alert('Tải nhạc thất bại: ' + (err instanceof Error ? err.message : String(err)));
     }
   };
 

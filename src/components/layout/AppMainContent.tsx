@@ -4,6 +4,7 @@ import TaskForm from '../tasks/TaskForm';
 import TaskBoard from '../tasks/TaskBoard.jsx';
 import TaskListView from '../tasks/TaskListView.jsx';
 import type { Task, UserData, TeamMember, LevelInfo } from '../../utils/helpers';
+import type { ShopItem } from '../../utils/constants';
 import type { User } from 'firebase/auth';
 
 const CalendarView = lazy(() => import('../calendar/CalendarView'));
