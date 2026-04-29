@@ -29,7 +29,19 @@ Last updated: 2026-04-30
 - Không đưa business logic nặng vào component.
 - API/Firestore logic phải đi qua `services/`.
 - Tránh duplicate module `.js/.ts` cùng tên.
-- Refactor theo batch nhỏ, mỗi batch phải qua build/lint.
+- Bắt buộc `npm run build` + `npm run lint` pass trước khi kết thúc task.
+
+## Sync Logic & Debug
+### Calendar Sync
+- **Source of Truth:** Fetch qua Apps Script (fallback Direct API).
+- **Auto-create task:** Xử lý tại `useCalendarAutoSync.ts`.
+- **Dedupe strategy:** Ưu tiên `calendarEventId`, fallback `title + scheduledStartTime`.
+- **Force sync:** Xảy ra ngay khi chuyển sang tab Calendar.
+
+### Debug Checklist
+- Kiểm tra ENV: `VITE_APPS_SCRIPT_URL`, `VITE_GOOGLE_CALENDAR_API_KEY`, `VITE_CALENDAR_ID_TIT`, `VITE_CALENDAR_ID_TUN`.
+- Kiểm tra User Setting: `autoSyncCalendar`.
+- Heartbeat stale check: Xem tại `checkTaskStale` trong `helpers.ts`.
 
 ## TS Migration — COMPLETED 2026-04-30
 - Toàn bộ `src/` đã 100% TypeScript/TSX.

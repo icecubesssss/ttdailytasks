@@ -6,10 +6,9 @@
 ```
 
 ## Prompt đầy đủ (AI tự đọc file này và làm):
-Đọc 3 file sau theo thứ tự trước khi làm bất cứ gì:
+Đọc 2 file sau theo thứ tự trước khi làm bất cứ gì:
 1. `docs/GUIDELINES.md` — quy tắc code, TypeScript rules, quality gates
-2. `docs/architecture.md` — stack, layout thư mục, runtime flow, rules
-3. `docs/runbook.md` — quy trình build/typecheck/lint/debug
+2. `docs/architecture.md` — stack, layout thư mục, runtime flow, sync/debug logic
 
 Sau đó:
 - Làm đúng task được yêu cầu, không mở rộng scope.
