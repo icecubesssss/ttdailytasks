@@ -2,22 +2,45 @@ import React, { useRef } from 'react';
 import { CalendarDays, Cpu, ListTree, Sparkles } from 'lucide-react';
 import ProductivityReport from './ProductivityReport';
 import { TeamMembersList, AppPreferences, FocusAutomation } from './subcomponents/StatsComponents';
-import DailyQuestWidget from './widgets/DailyQuestWidget.jsx';
-import MascotAssistantWidget from './widgets/MascotAssistantWidget.jsx';
-import DuoFocusWidget from './widgets/DuoFocusWidget.jsx';
+import DailyQuestWidget from './widgets/DailyQuestWidget';
+import MascotAssistantWidget from './widgets/MascotAssistantWidget';
+import DuoFocusWidget from './widgets/DuoFocusWidget';
+import { Task, TeamMember, UserData } from '../../utils/helpers';
 
 const DEFAULT_SHORTCUT_NAME = 'Làm việc';
+
+interface StatsViewProps {
+  tasks: Task[];
+  isDark: boolean;
+  teamMembers: TeamMember[];
+  userData: UserData;
+  onSummarize: () => void;
+  isSummarizing: boolean;
+  aiReport: string | null;
+  onUpdateSettings: (updates: Partial<UserData>) => void;
+  triggerSystemFocus: (shortcut: string) => void;
+  onTabChange?: (tab: string) => void;
+  dailyQuest: any;
+  onRefreshDailyQuest: () => void;
+  onCompleteDailyQuest: () => void;
+  currentTab: string;
+  onRenameMascot: () => void;
+  onChangeMascotAvatar: () => void;
+  partnerTask?: Task | null;
+  myRunningTask?: Task | null;
+  now: number;
+}
 
 export default function StatsView({ 
   tasks, isDark, teamMembers, userData, onSummarize, isSummarizing, 
   aiReport, onUpdateSettings, triggerSystemFocus, onTabChange,
   dailyQuest, onRefreshDailyQuest, onCompleteDailyQuest, currentTab, onRenameMascot, onChangeMascotAvatar,
   partnerTask, myRunningTask, now
-}) {
-  const startShortcutRef = useRef(null);
-  const stopShortcutRef = useRef(null);
+}: StatsViewProps) {
+  const startShortcutRef = useRef<HTMLInputElement>(null);
+  const stopShortcutRef = useRef<HTMLInputElement>(null);
 
-  const handleBlur = (key, val) => {
+  const handleBlur = (key: string, val: string) => {
     onUpdateSettings({ [key]: val });
   };
 

@@ -5,12 +5,33 @@ import {
   ChevronLeft, ChevronRight, LayoutGrid, List, Eye, EyeOff, RefreshCw, Zap 
 } from 'lucide-react';
 import { OWNER_STYLES } from '../../utils/calendarUtils';
+import { UserData } from '../../utils/helpers';
+
+interface CalendarHeaderProps {
+  isDark: boolean;
+  weekLabel: string;
+  currentDate: Date;
+  setCurrentDate: (date: Date) => void;
+  subWeeks: (date: Date, amount: number) => Date;
+  addWeeks: (date: Date, amount: number) => Date;
+  viewMode: 'grid' | 'weekly';
+  setViewMode: (mode: 'grid' | 'weekly') => void;
+  goToday: () => void;
+  showTit: boolean;
+  setShowTit: (val: boolean) => void;
+  showTun: boolean;
+  setShowTun: (val: boolean) => void;
+  onUpdateSettings: (updates: Partial<UserData>) => void;
+  userData: UserData;
+  fetchEvents: () => void;
+  loading: boolean;
+}
 
 export default function CalendarHeader({ 
   isDark, weekLabel, currentDate, setCurrentDate, subWeeks, addWeeks, 
   viewMode, setViewMode, goToday, showTit, setShowTit, showTun, setShowTun, 
   onUpdateSettings, userData, fetchEvents, loading 
-}) {
+}: CalendarHeaderProps) {
   const autoSync = userData?.autoSyncCalendar === true;
 
   return (

@@ -1,16 +1,22 @@
 import React from 'react';
 import { Layout, Calendar as CalendarIcon, ListTree, Sparkles, Zap, Rocket, Cpu } from 'lucide-react';
-import { getAvatarUrl, getAssigneeIdByEmail } from '../../../utils/helpers';
+import { getAvatarUrl, getAssigneeIdByEmail, TeamMember, UserData } from '../../../utils/helpers';
 import { DEFAULT_AVATARS, AI_MODELS } from '../../../utils/constants';
 
-export function TeamMembersList({ teamMembers, userData, isDark }) {
+interface TeamMembersListProps {
+  teamMembers: TeamMember[];
+  userData: UserData;
+  isDark: boolean;
+}
+
+export function TeamMembersList({ teamMembers, userData, isDark }: TeamMembersListProps) {
   return (
     <div className="grid grid-cols-1 gap-4">
       {teamMembers.map(member => (
         <div key={member.uid} className={`relative overflow-hidden p-4 rounded-3xl flex flex-col gap-3 transition-all group ${isDark ? 'bg-slate-900/60 border border-slate-800 hover:border-indigo-500/50 shadow-xl shadow-slate-950/20' : 'bg-white border border-slate-200 hover:border-indigo-500/30 shadow-lg shadow-slate-200/50'}`}>
           <div className="flex items-center gap-3">
             <div className={`relative flex-shrink-0 ${member.ownedItemIds?.includes('frame_neon') ? 'avatar-frame-neon' : ''}`}>
-              <img src={getAvatarUrl(member.avatarConfig || DEFAULT_AVATARS[getAssigneeIdByEmail(member.email)] || {})} className="w-12 h-12 rounded-full border-2 border-indigo-400/40 object-cover" alt={member.displayName} />
+              <img src={getAvatarUrl(member.avatarConfig || DEFAULT_AVATARS[getAssigneeIdByEmail(member.email) as keyof typeof DEFAULT_AVATARS] || {})} className="w-12 h-12 rounded-full border-2 border-indigo-400/40 object-cover" alt={member.displayName} />
               <div className="absolute -bottom-1 -right-1 bg-indigo-600 text-white text-[8px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-slate-900 ring-1 ring-indigo-400/50">
                 {member.level || 1}
               </div>
@@ -18,7 +24,7 @@ export function TeamMembersList({ teamMembers, userData, isDark }) {
             <div className="min-w-0 flex-1 leading-tight">
               <div className="flex items-center gap-2">
                 <p className="font-black text-base truncate">{member.displayName}</p>
-                {member.streak > 0 && (
+                {member.streak !== undefined && member.streak > 0 && (
                   <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg bg-orange-500/10 text-orange-500 text-[9px] font-black animate-pulse">
                     <Sparkles size={10} className="fill-orange-500" />
                     {member.streak}
@@ -31,10 +37,14 @@ export function TeamMembersList({ teamMembers, userData, isDark }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 mt-1">
+          <div className="grid grid-cols-2 gap-2 mt-1">
              <div className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border ${isDark ? 'bg-slate-950/40 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
                 <span className="text-xs">🔥</span>
                 <span className={`text-[10px] font-black ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{member.streak || 0} Ngày</span>
+             </div>
+             <div className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border ${isDark ? 'bg-slate-950/40 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
+                <span className="text-xs">❄️</span>
+                <span className={`text-[10px] font-black ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{member.streakFreezes || 0}</span>
              </div>
              <div className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border ${isDark ? 'bg-slate-950/40 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
                 <span className="text-xs">💰</span>
@@ -51,7 +61,14 @@ export function TeamMembersList({ teamMembers, userData, isDark }) {
   );
 }
 
-export function AppPreferences({ userData, isDark, onUpdateSettings, onTabChange }) {
+interface AppPreferencesProps {
+  userData: UserData;
+  isDark: boolean;
+  onUpdateSettings: (updates: Partial<UserData>) => void;
+  onTabChange?: (tab: string) => void;
+}
+
+export function AppPreferences({ userData, isDark, onUpdateSettings, onTabChange }: AppPreferencesProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div className={`p-5 rounded-[2rem] border transition-all ${isDark ? 'bg-[#09162e]/75 border-[#1f2d4e]' : 'bg-slate-50 border-slate-200 shadow-sm'}`}>
@@ -108,7 +125,18 @@ export function AppPreferences({ userData, isDark, onUpdateSettings, onTabChange
   );
 }
 
-export function FocusAutomation({ userData, isDark, onUpdateSettings, triggerSystemFocus, startShortcutRef, stopShortcutRef, handleBlur, DEFAULT_SHORTCUT_NAME }) {
+interface FocusAutomationProps {
+  userData: UserData;
+  isDark: boolean;
+  onUpdateSettings: (updates: Partial<UserData>) => void;
+  triggerSystemFocus: (shortcut: string) => void;
+  startShortcutRef: React.RefObject<HTMLInputElement | null>;
+  stopShortcutRef: React.RefObject<HTMLInputElement | null>;
+  handleBlur: (field: string, val: string) => void;
+  DEFAULT_SHORTCUT_NAME: string;
+}
+
+export function FocusAutomation({ userData, isDark, onUpdateSettings, triggerSystemFocus, startShortcutRef, stopShortcutRef, handleBlur, DEFAULT_SHORTCUT_NAME }: FocusAutomationProps) {
   return (
     <div className={`p-8 rounded-[2.5rem] border-2 transition-all relative overflow-hidden ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-100 shadow-xl'}`}>
       <div className="absolute top-0 right-0 p-8 opacity-5 -rotate-12"><Zap size={120} /></div>
@@ -127,14 +155,14 @@ export function FocusAutomation({ userData, isDark, onUpdateSettings, triggerSys
             <div className="flex items-center gap-2 mb-2"><div className="w-6 h-6 rounded-full bg-indigo-500/10 text-indigo-500 flex items-center justify-center text-[10px] font-black">1</div><span className="text-[11px] font-black uppercase text-slate-400">Khi Bắt Đầu Task</span></div>
             <div className="flex gap-2">
               <input type="text" ref={startShortcutRef} defaultValue={userData.shortcutName ?? DEFAULT_SHORTCUT_NAME} onBlur={(e) => handleBlur('shortcutName', e.target.value)} placeholder="VD: Làm việc" className={`flex-1 px-5 py-3 rounded-2xl text-xs font-bold outline-none border transition-all ${isDark ? 'bg-slate-800 border-slate-700 focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-500'}`} />
-              <button onClick={() => triggerSystemFocus(startShortcutRef.current?.value || userData.shortcutName || DEFAULT_SHORTCUT_NAME)} className="p-3 rounded-2xl bg-indigo-600 text-white hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-500/20"><Rocket size={18} /></button>
+              <button onClick={() => triggerSystemFocus(startShortcutRef.current?.value || userData.shortcutName || DEFAULT_SHORTCUT_NAME)} aria-label="Kích hoạt shortcut bắt đầu" className="p-3 rounded-2xl bg-indigo-600 text-white hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-500/20"><Rocket size={18} /></button>
             </div>
           </div>
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-2"><div className="w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-[10px] font-black">2</div><span className="text-[11px] font-black uppercase text-slate-400">Khi Tạm Dừng / Xong</span></div>
             <div className="flex gap-2">
               <input type="text" ref={stopShortcutRef} defaultValue={userData.offShortcutName ?? ''} onBlur={(e) => handleBlur('offShortcutName', e.target.value)} placeholder="Trống = Không đổi" className={`flex-1 px-5 py-3 rounded-2xl text-xs font-bold outline-none border transition-all ${isDark ? 'bg-slate-800 border-slate-700 focus:border-emerald-500' : 'bg-slate-50 border-slate-200 focus:border-emerald-500'}`} />
-              <button onClick={() => { const s = stopShortcutRef.current?.value || userData.offShortcutName; if (s) triggerSystemFocus(s); }} disabled={!userData.offShortcutName} className={`p-3 rounded-2xl transition-all shadow-lg active:scale-95 ${userData.offShortcutName ? 'bg-emerald-600 text-white shadow-emerald-500/20' : 'bg-slate-800 text-slate-600 opacity-50 cursor-not-allowed'}`}><Rocket size={18} /></button>
+              <button onClick={() => { const s = stopShortcutRef.current?.value || userData.offShortcutName; if (s) triggerSystemFocus(s as string); }} aria-label="Kích hoạt shortcut dừng" disabled={!userData.offShortcutName} className={`p-3 rounded-2xl transition-all shadow-lg active:scale-95 ${userData.offShortcutName ? 'bg-emerald-600 text-white shadow-emerald-500/20' : 'bg-slate-800 text-slate-600 opacity-50 cursor-not-allowed'}`}><Rocket size={18} /></button>
             </div>
           </div>
         </div>

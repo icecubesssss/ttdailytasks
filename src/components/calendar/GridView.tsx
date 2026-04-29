@@ -4,11 +4,24 @@ import { vi } from 'date-fns/locale';
 import { Loader2 } from 'lucide-react';
 import { HOURS, DAY_START_HOUR, HOUR_HEIGHT } from '../../utils/calendarUtils';
 import { TimeNowIndicator, EventBlock, TaskDeadlineMarker, AllDayEvent } from './CalendarSubComponents';
+import { CalendarEvent, Task } from '../../utils/helpers';
+
+interface GridViewProps {
+  isDark: boolean;
+  loading: boolean;
+  error: string | null;
+  visibleEvents: CalendarEvent[];
+  weekDays: Date[];
+  getAllDayForDay: (day: Date) => CalendarEvent[];
+  getEventsForDay: (day: Date) => CalendarEvent[];
+  getTasksForDay: (day: Date) => Task[];
+  scrollRef: React.RefObject<HTMLDivElement | null>;
+}
 
 export default function GridView({ 
   isDark, loading, error, visibleEvents, weekDays, 
   getAllDayForDay, getEventsForDay, getTasksForDay, scrollRef 
-}) {
+}: GridViewProps) {
   return (
     <div className={`rounded-3xl overflow-hidden ${isDark ? 'glass-dark' : 'glass-light shadow-lg'}`}>
       {loading && (

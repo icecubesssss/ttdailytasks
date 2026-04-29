@@ -93,7 +93,8 @@ export function useUserStats(user: any) {
           streak: userData.streak || 0,
           xp: userData.xp || 0,
           level: userData.level || 1,
-          ttGold: userData.ttGold || 0
+          ttGold: userData.ttGold || 0,
+          streakFreezes: userData.streakFreezes || 0
         });
       } catch {
         ignoreAsyncError();
@@ -103,7 +104,7 @@ export function useUserStats(user: any) {
     updateActive();
     const interval = setInterval(updateActive, 20000);
     return () => clearInterval(interval);
-  }, [user, userData.ownedItemIds, userData.avatarConfig, userData.streak, userData.xp, userData.level, userData.ttGold]);
+  }, [user, userData.ownedItemIds, userData.avatarConfig, userData.streak, userData.xp, userData.level, userData.ttGold, userData.streakFreezes]);
 
   // 4. Booster Cleanup
   useEffect(() => {

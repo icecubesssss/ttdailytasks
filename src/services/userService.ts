@@ -22,14 +22,30 @@ export const subscribeToTeamMembers = (callback: (members: TeamMember[]) => void
   });
 };
 
+/** Mirror widget-relevant stats to a public path so the Scriptable widget can read without auth. */
+const syncPublicStats = async (uid: string, data: Partial<UserData>): Promise<void> => {
+  const relevantFields = ['streak', 'level', 'xp', 'ttGold', 'streakFreezes'];
+  const hasRelevant = relevantFields.some(f => f in data);
+  if (!hasRelevant) return;
+
+  const publicRef = doc(db, 'artifacts', appId, 'public', 'data', 'widget_stats', uid);
+  const mirror: Record<string, unknown> = { updatedAt: Date.now() };
+  for (const f of relevantFields) {
+    if (f in data) mirror[f] = (data as Record<string, unknown>)[f];
+  }
+  await setDoc(publicRef, mirror, { merge: true });
+};
+
 export const initializeUserStats = async (uid: string, initialData: Partial<UserData>): Promise<void> => {
   const userDocRef = doc(db, 'artifacts', appId, 'users', uid, 'profile', 'stats');
-  return await setDoc(userDocRef, initialData, { merge: true });
+  await setDoc(userDocRef, initialData, { merge: true });
+  syncPublicStats(uid, initialData).catch(() => undefined);
 };
 
 export const updateUserStats = async (uid: string, updates: Partial<UserData>): Promise<void> => {
   const userDocRef = doc(db, 'artifacts', appId, 'users', uid, 'profile', 'stats');
-  return await updateDoc(userDocRef, updates as DocumentData);
+  await updateDoc(userDocRef, updates as DocumentData);
+  syncPublicStats(uid, updates).catch(() => undefined);
 };
 
 export const updateTeamMemberActive = async (uid: string, data: Partial<TeamMember>): Promise<void> => {

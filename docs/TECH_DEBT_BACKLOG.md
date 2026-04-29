@@ -1,6 +1,6 @@
 # TECH DEBT BACKLOG
 
-Last updated: 2026-04-28
+Last updated: 2026-04-30
 
 Mode: Feature-first, refactor opportunistic only.
 
@@ -10,15 +10,17 @@ Mode: Feature-first, refactor opportunistic only.
 - Mỗi task vẫn phải qua `npm run build` và `npm run lint`.
 
 ## Current Debt Candidates
-1. Auth components còn `.jsx` (`LoginScreen`, `SplashScreen`) -> chuyển `.tsx` khi đụng feature auth.
-2. Các feature components còn `.jsx` (calendar/focus/shop/stats/tasks) -> migrate dần theo file được chạm.
-3. Duplicate `.js/.ts` cùng module (nếu còn phát sinh) -> xử lý ngay trong cùng task.
-4. Remaining temporary casts (`as any`/`as unknown as`) cần dọn theo cụm type contract:
+1. Các feature components còn `.jsx` (focus) -> migrate dần theo file được chạm.
+2. Duplicate `.js/.ts` cùng module (nếu còn phát sinh) -> xử lý ngay trong cùng task.
+3. Remaining temporary casts (`as any`/`as unknown as`) cần dọn theo cụm type contract:
    - `src/hooks/useUserStats.ts`: `DEFAULT_AVATARS`/`BOOSTER_DURATIONS` đang index bằng key động; cần typed dictionary key union.
    - `src/hooks/useFocusMusic.ts`: Firestore `doc.data()` cần decode typed thay vì cast thẳng.
    - `src/hooks/useAppBootstrap.ts`, `src/contexts/TaskContext.tsx`: còn `as unknown as` để bridge giữa local dummy/auth-subtask shape và type chính.
 
 ## Done Log
+- 2026-04-30: Phase 3 complete - converted 4 .jsx files in auth and shop to .tsx (LoginScreen, SplashScreen, ShopView, ClosetView) with explicit TypeScript types for props. Auth and shop components now 100% TypeScript compliant.
+- 2026-04-30: Phase 1 complete - converted all 4 .jsx files in `src/components/tasks/` to .tsx (TaskBoard, TaskComponents, TaskItem, TaskListView) with explicit TypeScript types for props, state, and functions. Tasks components now 100% TypeScript compliant.
+- 2026-04-29: Fix đồng bộ Streak Freeze & Refactor toàn bộ thư mục `src/components/stats` sang TSX (bao gồm core components và widgets). Toàn bộ khu vực thống kê hiện đã đạt chuẩn TypeScript 100%.
 - 2026-04-28: Stats Phase 2+3 complete - wired `teamMembers` into productivity stats flow (`StatsView.jsx` -> `ProductivityReport.jsx` -> `useProductivityStats.ts`), added `uid -> email -> legacy (tit/tun)` mapping and `unknown` fallback guard to keep charts stable with mixed/dirty assignee data.
 - 2026-04-28: Stats Phase 1 patch complete - normalized assignee mapping in `useProductivityStats.ts` via safe helper (`assigneeId`/`assigneeName` -> `tit|tun|unknown`) and applied across totals/distribution/hours/late metrics; mixed/empty assignee no longer breaks chart split.
 - 2026-04-28: Foundation type fixes + build/lint xanh.

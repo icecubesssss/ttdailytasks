@@ -88,6 +88,7 @@ export interface UserData {
   calendarVisibility: { tit: boolean; tun: boolean };
   mascotName: string;
   mascotAvatar: string;
+  autoSyncCalendar?: boolean;
   isLoaded: boolean;
   music: {
     currentTrackIdx: number;
@@ -106,6 +107,7 @@ export interface TeamMember {
   xp?: number;
   level?: number;
   ttGold?: number;
+  streakFreezes?: number;
   avatarConfig?: AvatarConfig | null;
   ownedItemIds?: string[];
   activeBooster?: unknown;

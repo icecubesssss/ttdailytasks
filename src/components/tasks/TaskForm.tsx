@@ -75,13 +75,15 @@ const TaskForm = ({ user, isDark, teamMembers = [], onLocalAdd }: TaskFormProps)
       createdAt: Date.now()
     };
 
-    // Robust Sanitization: Firestore DOES NOT accept 'undefined'
+    // Robust Sanitization: Firestore DOES NOT accept 'undefined', and we omit 'id' to let Firestore manage it
     const cleanTask = Object.entries(newTask).reduce<Record<string, unknown>>((acc, [key, val]) => {
-      acc[key] = val === undefined ? null : val;
+      if (key !== 'id') {
+        acc[key] = val === undefined ? null : val;
+      }
       return acc;
     }, {});
     
-    console.log("Submitting Task to Firebase:", cleanTask);
+    console.log("Submitting Task to Firebase (without local ID):", cleanTask);
     
     if (user && user.uid !== "local-user-test") {
         try {
@@ -134,7 +136,12 @@ const TaskForm = ({ user, isDark, teamMembers = [], onLocalAdd }: TaskFormProps)
                   <div key={sub.id} className="flex items-center gap-2 group animate-in slide-in-from-left-2">
                     <Circle size={10} className="text-slate-400" />
                     <span className={`text-xs font-bold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{sub.title}</span>
-                    <button type="button" onClick={() => removeTempSubTask(sub.id)} className="opacity-0 group-hover:opacity-100 text-red-400 transition-all">
+                    <button 
+                      type="button" 
+                      onClick={() => removeTempSubTask(sub.id)} 
+                      className="opacity-0 group-hover:opacity-100 text-red-400 transition-all"
+                      aria-label="Xóa việc nhỏ"
+                    >
                       <X size={12} />
                     </button>
                   </div>
@@ -162,7 +169,12 @@ const TaskForm = ({ user, isDark, teamMembers = [], onLocalAdd }: TaskFormProps)
              {/* Người phụ trách (Chỉ Tit / Tun) */}
              <div className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${assigneeId ? (isDark ? 'bg-indigo-500/20 text-indigo-300' : 'bg-indigo-50 text-indigo-600') : (isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-indigo-50/70 text-slate-600 hover:bg-indigo-50')}`}>
                 <Users size={14} className="flex-shrink-0"/>
-                <select value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)} className="task-form-select bg-transparent outline-none cursor-pointer appearance-none pr-5 min-w-[72px]">
+                <select 
+                  value={assigneeId} 
+                  onChange={(e) => setAssigneeId(e.target.value)} 
+                  className="task-form-select bg-transparent outline-none cursor-pointer appearance-none pr-5 min-w-[72px]"
+                  aria-label="Chọn người phụ trách"
+                >
                     <option value="">Ai nhận?</option>
                     {teamMembers.map(member => (
                       <option key={member.uid} value={member.uid}>{member.displayName || member.email}</option>
@@ -178,6 +190,7 @@ const TaskForm = ({ user, isDark, teamMembers = [], onLocalAdd }: TaskFormProps)
                   value={priority}
                   onChange={(e) => setPriority(e.target.value as NonNullable<Task['priority']>)}
                   className="task-form-select bg-transparent outline-none cursor-pointer uppercase appearance-none pr-5 min-w-[68px]"
+                  aria-label="Chọn độ ưu tiên"
                 >
                   <option value="high">GẤP</option>
                   <option value="medium">Vừa</option>
@@ -189,7 +202,13 @@ const TaskForm = ({ user, isDark, teamMembers = [], onLocalAdd }: TaskFormProps)
              {/* Deadline */}
              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${deadline ? 'bg-pink-500/10 text-pink-500' : (isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200')}`}>
                 <CalendarIcon size={14} className="flex-shrink-0"/>
-                <input type="datetime-local" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="task-form-datetime bg-transparent outline-none cursor-pointer max-w-[150px]" style={{ colorScheme: isDark ? 'dark' : 'light' }} />
+                <input 
+                  type="datetime-local" 
+                  value={deadline} 
+                  onChange={(e) => setDeadline(e.target.value)} 
+                  className={`task-form-datetime bg-transparent outline-none cursor-pointer max-w-[150px] ${isDark ? 'scheme-dark' : 'scheme-light'}`}
+                  aria-label="Chọn thời hạn"
+                />
              </div>
 
              {/* Chế độ Time */}
@@ -203,6 +222,8 @@ const TaskForm = ({ user, isDark, teamMembers = [], onLocalAdd }: TaskFormProps)
                     value={countdownMinutes} 
                     onChange={(e) => setCountdownMinutes(Number(e.target.value) || 0)} 
                     className={`w-14 text-center text-xs font-bold px-2 py-1.5 rounded-full outline-none focus:ring-1 focus:ring-indigo-500 transition-all ${isDark ? 'bg-slate-800 text-indigo-300 border border-slate-700' : 'bg-slate-100 text-slate-700 border border-slate-200'}`} 
+                    aria-label="Số phút đếm ngược"
+                    placeholder="25"
                   />
                 )}
              </div>

@@ -1,7 +1,33 @@
 import React from 'react';
 import { Trash2, Lock, Users, Clock, Calendar, Pencil, CheckCircle2, Circle, X, BrainCircuit } from 'lucide-react';
 
-export function TaskTags({ task, isLocked, isDark, onPriorityChange, onDelete }) {
+interface Task {
+  id: string;
+  title: string;
+  priority?: string;
+  assigneeId?: string;
+  assigneePhoto?: string;
+  assigneeName?: string;
+  status: string;
+  type?: string;
+  limitTime?: number;
+  // Add other fields as needed
+}
+
+interface SubTask {
+  title: string;
+  isDone: boolean;
+}
+
+interface TaskTagsProps {
+  task: Task;
+  isLocked: boolean;
+  isDark: boolean;
+  onPriorityChange: (id: string, priority: string) => void;
+  onDelete: (id: string) => void;
+}
+
+export function TaskTags({ task, isLocked, isDark, onPriorityChange, onDelete }: TaskTagsProps) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
       <div className="flex gap-1.5 flex-wrap">
@@ -35,7 +61,7 @@ export function TaskTags({ task, isLocked, isDark, onPriorityChange, onDelete })
   );
 }
 
-export function TaskTitle({ task, isLocked, isCompleted, isDark, isEditing, editTitleRef, onStartEdit }) {
+export function TaskTitle({ task, isLocked, isCompleted, isDark, isEditing, editTitleRef, onStartEdit }: TaskTitleProps) {
   if (isEditing) return (
     <div className="mb-3">
       <input autoFocus type="text" ref={editTitleRef} defaultValue={task.title} spellCheck="false" autoComplete="off"
@@ -54,7 +80,17 @@ export function TaskTitle({ task, isLocked, isCompleted, isDark, isEditing, edit
   );
 }
 
-export function SubTaskItem({ sub, isLocked, isCompleted, isDark, isEditing, editSubTaskRef, onToggle, onRename, onDelete, onStartEdit }) {
+interface TaskTitleProps {
+  task: Task;
+  isLocked: boolean;
+  isCompleted: boolean;
+  isDark: boolean;
+  isEditing: boolean;
+  editTitleRef: React.RefObject<HTMLInputElement>;
+  onStartEdit: () => void;
+}
+
+export function SubTaskItem({ sub, isLocked, isCompleted, isDark, isEditing, editSubTaskRef, onToggle, onRename, onDelete, onStartEdit }: SubTaskItemProps) {
   return (
     <div className="flex items-start gap-1.5 group/sub">
       <button onClick={onToggle} disabled={isLocked || isCompleted}
@@ -81,7 +117,20 @@ export function SubTaskItem({ sub, isLocked, isCompleted, isDark, isEditing, edi
   );
 }
 
-export function TimerSettingsPopover({ task, isDark, onUpdateTask, onClose }) {
+interface SubTaskItemProps {
+  sub: SubTask;
+  isLocked: boolean;
+  isCompleted: boolean;
+  isDark: boolean;
+  isEditing: boolean;
+  editSubTaskRef: React.RefObject<HTMLInputElement>;
+  onToggle: () => void;
+  onRename: () => void;
+  onDelete: () => void;
+  onStartEdit: () => void;
+}
+
+export function TimerSettingsPopover({ task, isDark, onUpdateTask, onClose }: TimerSettingsPopoverProps) {
   const isCountdown = task.type === 'countdown';
   const limitMs = task.limitTime || 0;
 
@@ -123,4 +172,11 @@ export function TimerSettingsPopover({ task, isDark, onUpdateTask, onClose }) {
       )}
     </div>
   );
+}
+
+interface TimerSettingsPopoverProps {
+  task: Task;
+  isDark: boolean;
+  onUpdateTask: (id: string, updates: any) => void;
+  onClose: () => void;
 }

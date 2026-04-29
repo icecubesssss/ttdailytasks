@@ -508,3 +508,10 @@ select option {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+/* Color Scheme Utilities */
+.scheme-dark {
+  color-scheme: dark;
+}
+.scheme-light {
+  color-scheme: light;
+}

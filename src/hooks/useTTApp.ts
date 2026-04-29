@@ -15,6 +15,7 @@ import { useAutoTaskLogic } from './useAutoTaskLogic';
 import { useCalendarAutoSync } from './useCalendarAutoSync';
 import { useNow } from './useNow';
 import { useActivityResume } from './useActivityResume';
+import { useDeepLinks } from './useDeepLinks';
 import { isDummyConfig, googleCalendarApiKey, calendarIdTit, calendarIdTun, appsScriptUrl } from '../firebase';
 
 export function useTTApp() {
@@ -75,6 +76,9 @@ export function useTTApp() {
 
   // Automated logic for schedule
   useAutoTaskLogic(tasks, now, taskActions);
+
+  // Deep Link Handling
+  useDeepLinks({ taskActions, isLoaded: userData.isLoaded });
 
   // Auto Sync Calendar events to tasks
   const { triggerSync } = useCalendarAutoSync({

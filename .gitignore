@@ -32,4 +32,4 @@ service-account*.json
 
 .env
 
-.firebase/
+.firebase

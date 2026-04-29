@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { HOUR_HEIGHT, DAY_START_HOUR, DAY_END_HOUR, OWNER_STYLES } from '../../utils/calendarUtils';
+import { CalendarEvent, Task } from '../../utils/helpers';
 
 export function TimeNowIndicator() {
   const [now, setNow] = useState(new Date());
@@ -21,7 +22,7 @@ export function TimeNowIndicator() {
   );
 }
 
-export function EventBlock({ event }) {
+export function EventBlock({ event }: { event: CalendarEvent }) {
   if (!event.start || !event.end || event.isAllDay) return null;
   const startMin = event.start.getHours() * 60 + event.start.getMinutes();
   const endMin = event.end.getHours() * 60 + event.end.getMinutes();
@@ -45,7 +46,7 @@ export function EventBlock({ event }) {
   );
 }
 
-export function AllDayEvent({ event }) {
+export function AllDayEvent({ event }: { event: CalendarEvent }) {
   const style = OWNER_STYLES[event.owner] || OWNER_STYLES.tit;
   return (
     <div className={`px-2 py-1 rounded-lg text-[9px] font-bold text-white bg-gradient-to-r ${style.gradient} truncate mb-0.5`}>
@@ -54,7 +55,7 @@ export function AllDayEvent({ event }) {
   );
 }
 
-export function TaskDeadlineMarker({ task, isDark }) {
+export function TaskDeadlineMarker({ task, isDark }: { task: Task; isDark: boolean }) {
   if (!task.deadline) return null;
   const d = new Date(task.deadline);
   const min = d.getHours() * 60 + d.getMinutes();

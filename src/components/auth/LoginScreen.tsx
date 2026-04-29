@@ -4,6 +4,10 @@ import { auth, db, appId } from '../../firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { ShieldAlert, Zap, Lock, User, Heart } from 'lucide-react';
 
+interface LoginScreenProps {
+  authError?: string | null;
+}
+
 const ALLOWED_USERS = {
   tit: {
     email: 'dinhthai.ctv@gmail.com',
@@ -19,7 +23,7 @@ const ALLOWED_USERS = {
 
 const SECRET_PASS = '04102023';
 
-export default function LoginScreen({ authError }) {
+export default function LoginScreen({ authError }: LoginScreenProps) {
   const [localError, setLocalError] = useState(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import * as taskService from '../services/taskService';
 import { checkTaskStale, Task } from '../utils/helpers';
 import { HEARTBEAT_INTERVAL, HEARTBEAT_TIMEOUT } from '../utils/constants';
@@ -16,7 +16,7 @@ export function useHeartbeat(user: User | null, tasks: Task[]): void {
     return tasks.find(t => t.status === 'running' && t.currentWorker === user.uid)?.id || null;
   }, [user, tasks]);
 
-  const hasBootedRef = { current: false };
+  const hasBootedRef = useRef(false);
 
   // A. Heartbeat Sender — mỗi 90s, chạy khi tab mở (foreground & background)
   useEffect(() => {
@@ -38,13 +38,15 @@ export function useHeartbeat(user: User | null, tasks: Task[]): void {
     tasks.forEach(task => {
       const { isStale, activeTime } = checkTaskStale(task, now, HEARTBEAT_TIMEOUT);
       if (isStale) {
-        console.log(`[Heartbeat] Boot cleanup: auto-pausing "${task.title}"`);
+        console.log(`[Heartbeat] Boot cleanup: auto-pausing "${task.title}" (reason: heartbeat_timeout)`);
         taskService.updateTask(task.id, {
           status: 'paused',
           totalTrackedTime: (task.totalTrackedTime || 0) + (activeTime ?? 0),
           lastStartTime: undefined,
           autoPauseReason: 'heartbeat_timeout'
-        }).catch(() => {});
+        }).catch((err) => {
+          console.error(`[Heartbeat] Failed to auto-pause task ${task.id}:`, err);
+        });
       }
     });
   }, [user, tasks]);

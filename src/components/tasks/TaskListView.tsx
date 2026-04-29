@@ -4,21 +4,42 @@ import { formatDistanceToNow, isPast } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { formatDuration } from '../../utils/helpers';
 import { ASSIGNEES } from '../../utils/constants';
+import type { Task } from '../../utils/helpers';
+import type { User } from 'firebase/auth';
 
-const TaskListItem = ({
+interface SubTask {
+  id: string;
+  title: string;
+  isDone: boolean;
+}
+
+interface TaskListItemProps {
+  task: Task;
+  isDark: boolean;
+  now: number;
+  currentAssigneeId: string | null;
+  user: User | null;
+  onStart: (id: string) => void;
+  onPause: (id: string) => void;
+  onComplete: (id: string) => void;
+  onDelete: (id: string) => void;
+}
+
+const TaskListItem: React.FC<TaskListItemProps> = ({
   task, isDark, now, currentAssigneeId, user,
   onStart, onPause, onComplete, onDelete
 }) => {
   const [expanded, setExpanded] = useState(false);
+  const nowDate = new Date(now);
   
-  const elapsed = task.status === 'running' ? task.totalTrackedTime + (now - task.lastStartTime) : task.totalTrackedTime;
+  const elapsed = task.status === 'running' ? task.totalTrackedTime + (now - (task.lastStartTime || 0)) : task.totalTrackedTime;
   const displayTime = task.type === 'countdown' ? Math.max(0, (task.limitTime || 0) - elapsed) : elapsed;
   const isWorking = task.status === 'running';
   const isAssignedToMe = task.assigneeId === currentAssigneeId;
-  const isCreator = user && task.createdBy === user.uid;
+  const isCreator = !!user && task.createdBy === user.uid;
   const isLocked = task.assigneeId && !isAssignedToMe && !isCreator;
-  const hasDeadline = !!task.deadline;
-  const overdue = hasDeadline && isPast(task.deadline) && task.status !== 'completed';
+  const hasDeadline = typeof task.deadline === 'number';
+  const overdue = hasDeadline && isPast(task.deadline as number) && task.status !== 'completed';
   const subTasks = task.subTasks || [];
 
   return (
@@ -48,7 +69,7 @@ const TaskListItem = ({
               )}
               {hasDeadline && (
                 <span className={`flex items-center gap-1 ${overdue ? 'text-red-500' : ''}`}>
-                  <Calendar size={10} /> {formatDistanceToNow(task.deadline, { locale: vi, addSuffix: true })}
+                  <Calendar size={10} /> {formatDistanceToNow(new Date(task.deadline as number), { locale: vi, addSuffix: true })}
                 </span>
               )}
               {subTasks.length > 0 && (
@@ -108,7 +129,22 @@ const TaskListItem = ({
   );
 };
 
-const TaskGroup = ({ title, tasksList, colorClass, icon, isDark, now, currentAssigneeId, user, onStart, onPause, onComplete, onDelete }) => {
+interface TaskGroupProps {
+  title: string;
+  tasksList: Task[];
+  colorClass: string;
+  icon: React.ReactElement;
+  isDark: boolean;
+  now: number;
+  currentAssigneeId: string | null;
+  user: User | null;
+  onStart: (id: string) => void;
+  onPause: (id: string) => void;
+  onComplete: (id: string) => void;
+  onDelete: (id: string) => void;
+}
+
+const TaskGroup: React.FC<TaskGroupProps> = ({ title, tasksList, colorClass, icon, isDark, now, currentAssigneeId, user, onStart, onPause, onComplete, onDelete }) => {
   if (tasksList.length === 0) return null;
   return (
     <div className="mb-6">
@@ -135,13 +171,25 @@ const TaskGroup = ({ title, tasksList, colorClass, icon, isDark, now, currentAss
   );
 };
 
+interface TaskListViewProps {
+  tasks: Task[];
+  user: User | null;
+  currentAssigneeId: string | null;
+  isDark: boolean;
+  now: number;
+  onStart: (id: string) => void;
+  onPause: (id: string) => void;
+  onComplete: (id: string) => void;
+  onDelete: (id: string) => void;
+}
+
 function TaskListView({
   tasks, user, currentAssigneeId, isDark, now,
   onStart, onPause, onComplete, onDelete
-}) {
+}: TaskListViewProps) {
   const sortedTasks = [...tasks].sort((a,b) => b.createdAt - a.createdAt);
 
-  const isOverdue = (t) => t.deadline && t.deadline < now && t.status !== 'completed';
+  const isOverdue = (t: Task) => t.deadline && t.deadline < now && t.status !== 'completed';
   const overdueTasks = sortedTasks.filter(t => isOverdue(t));
   const inProgressTasks = sortedTasks.filter(t => t.status === 'running' && !isOverdue(t));
   const todoTasks = sortedTasks.filter(t => (t.status === 'idle' || t.status === 'paused') && !isOverdue(t));

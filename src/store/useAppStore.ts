@@ -23,6 +23,7 @@ export const DEFAULT_USER_DATA: UserData = {
   calendarVisibility: { tit: true, tun: true },
   mascotName: 'Mochi',
   mascotAvatar: '🤖',
+  autoSyncCalendar: false,
   isLoaded: false,
   music: {
     currentTrackIdx: 0,

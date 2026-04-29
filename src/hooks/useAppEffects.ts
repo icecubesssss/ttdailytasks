@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Task, UserData } from '../utils/helpers';
 import { DailyQuest } from '../services/dailyQuestService';
 import * as dailyQuestService from '../services/dailyQuestService';
@@ -20,8 +20,8 @@ export const useAppEffects = ({
   playSound,
   setTheme
 }: UseAppEffectsProps): void => {
-  const streakMilestonesRef = { current: [7, 30] };
-  const previousStreakRef = { current: null as number | null };
+  const streakMilestonesRef = useRef([7, 30]);
+  const previousStreakRef = useRef<number | null>(null);
 
   useEffect(() => {
     setTheme(userData.isDarkMode ? 'dark' : 'light');

@@ -1,32 +1,61 @@
 import React, { useState, useRef } from 'react';
 import { Play, Pause, CheckCircle2, Clock, Calendar, Pencil, Lock, BrainCircuit } from 'lucide-react';
 import { formatDuration, getLegacyIdByEmail } from '../../utils/helpers';
+import type { Task } from '../../utils/helpers';
 import { formatDistanceToNow, isPast } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { TaskTags, TaskTitle, SubTaskItem, TimerSettingsPopover } from './subcomponents/TaskComponents';
+
+type SubTaskActionType = 'add' | 'toggle' | 'rename' | 'delete';
+
+interface User {
+  uid?: string;
+  email?: string | null;
+}
+
+interface TaskItemProps {
+  task: Task;
+  user: User | null;
+  currentAssigneeId: string | null;
+  isDark: boolean;
+  now: Date;
+  aiLoading: boolean;
+  onStart: (id: string) => void;
+  onPause: (id: string) => void;
+  onComplete: (id: string) => void;
+  onDelete: (id: string) => void;
+  onPriorityChange: (id: string, priority: string) => void;
+  onUpdateDeadline: (id: string, deadline: string) => void;
+  onRenameTask: (id: string, title: string) => void;
+  onSubTaskAdd: (taskId: string, subId: string | null, action: SubTaskActionType, title: string) => void;
+  onSubTaskToggle: (taskId: string, subId: string, action: SubTaskActionType, title?: string) => void;
+  onSubTaskDelete: (taskId: string, subId: string, action: SubTaskActionType) => void;
+  onUpdateTask: (id: string, updates: any) => void;
+  onAiSubtasks: (id: string, title: string) => void;
+}
 
 function TaskItem({
   task, user, currentAssigneeId, isDark, now, aiLoading,
   onStart, onPause, onComplete, onDelete, onPriorityChange, onUpdateDeadline, onRenameTask,
   onSubTaskAdd, onSubTaskToggle, onSubTaskDelete, onUpdateTask, onAiSubtasks
-}) {
+}: TaskItemProps) {
   const [isEditingDeadline, setIsEditingDeadline] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [editingSubTaskId, setEditingSubTaskId] = useState(null);
+  const [editingSubTaskId, setEditingSubTaskId] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
-  const editTitleRef = useRef(null);
-  const newSubTaskRef = useRef(null);
-  const editSubTaskRef = useRef(null);
+  const editTitleRef = useRef<HTMLInputElement>(null);
+  const newSubTaskRef = useRef<HTMLInputElement>(null);
+  const editSubTaskRef = useRef<HTMLInputElement>(null);
   const [resetKey, setResetKey] = useState(0);
   const [tempDeadline, setTempDeadline] = useState(task.deadline ? new Date(task.deadline - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16) : '');
 
-  const elapsed = task.status === 'running' ? task.totalTrackedTime + (now - task.lastStartTime) : task.totalTrackedTime;
+  const elapsed = task.status === 'running' ? task.totalTrackedTime + (now - (task.lastStartTime || 0)) : task.totalTrackedTime;
   const displayTime = task.type === 'countdown' ? Math.max(0, (task.limitTime || 0) - elapsed) : elapsed;
   const isWorking = task.status === 'running';
   const legacyId = getLegacyIdByEmail(user?.email);
   const isAssignedToMe = task.assigneeId === currentAssigneeId || (task.assigneeId && task.assigneeId === legacyId);
-  const isCreator = user && task.createdBy === user.uid;
+  const isCreator = !!user && task.createdBy === user.uid;
   const isLocked = task.assigneeId && !isAssignedToMe && !isCreator;
   const isCompleted = task.status?.startsWith('completed');
   const overdue = !!task.deadline && isPast(task.deadline) && !isCompleted;

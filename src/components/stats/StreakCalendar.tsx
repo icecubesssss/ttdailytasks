@@ -3,13 +3,21 @@ import { createPortal } from 'react-dom';
 import { 
   format, addMonths, subMonths, startOfMonth, endOfMonth, 
   startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, 
-  isToday
+  isToday 
 } from 'date-fns';
-import { Flame, Snowflake, ChevronLeft, ChevronRight, Target, X } from 'lucide-react';
+import { Flame, Snowflake, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { UserData } from '../../utils/helpers';
 
 const WEEK_STARTS_ON = 1;
 
-export default function StreakCalendar({ userData, isDark }) {
+interface StreakCalendarProps {
+  userData: UserData;
+  isDark: boolean;
+}
+
+type DayStatus = 'active' | 'freeze' | 'inactive';
+
+export default function StreakCalendar({ userData, isDark }: StreakCalendarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
@@ -17,9 +25,9 @@ export default function StreakCalendar({ userData, isDark }) {
   const lastCheckIn = userData.lastCheckIn; 
   const checkInHistory = userData.checkInHistory || {};
 
-  const getDayStatus = (date) => {
+  const getDayStatus = (date: Date): DayStatus => {
     const dateStr = date.toDateString();
-    if (checkInHistory[dateStr]) return checkInHistory[dateStr];
+    if (checkInHistory[dateStr]) return checkInHistory[dateStr] as DayStatus;
     
     if (!lastCheckIn || streak === 0) return 'inactive';
 
@@ -30,12 +38,12 @@ export default function StreakCalendar({ userData, isDark }) {
     const todayDate = new Date();
     todayDate.setHours(0, 0, 0, 0);
 
-    const diffFromLastCheckIn = Math.round((lastCheckInDate - targetDate) / 86400000);
+    const diffFromLastCheckIn = Math.round((lastCheckInDate.getTime() - targetDate.getTime()) / 86400000);
     if (diffFromLastCheckIn >= 0 && diffFromLastCheckIn < streak) return 'active';
 
-    const diffFromTodayToLast = Math.round((todayDate - lastCheckInDate) / 86400000);
+    const diffFromTodayToLast = Math.round((todayDate.getTime() - lastCheckInDate.getTime()) / 86400000);
     if (diffFromTodayToLast > 1) {
-      const diffToTarget = Math.round((targetDate - lastCheckInDate) / 86400000);
+      const diffToTarget = Math.round((targetDate.getTime() - lastCheckInDate.getTime()) / 86400000);
       if (diffToTarget > 0 && diffToTarget < diffFromTodayToLast) {
         if ((userData.streakFreezes || 0) >= diffFromTodayToLast - 1) return 'freeze';
       }
@@ -72,7 +80,7 @@ export default function StreakCalendar({ userData, isDark }) {
           
           <div className={`relative w-full max-w-sm rounded-[2.5rem] shadow-2xl p-6 md:p-8 animate-in zoom-in-95 duration-200 ${isDark ? 'bg-slate-900 border-2 border-slate-800' : 'bg-white border-2 border-slate-100'}`}>
             
-            <button onClick={() => setIsOpen(false)} className={`absolute top-4 right-4 p-2 rounded-full transition-colors ${isDark ? 'bg-slate-800 hover:bg-slate-700 text-slate-400' : 'bg-slate-100 hover:bg-slate-200 text-slate-500'}`}>
+            <button onClick={() => setIsOpen(false)} aria-label="Đóng" className={`absolute top-4 right-4 p-2 rounded-full transition-colors ${isDark ? 'bg-slate-800 hover:bg-slate-700 text-slate-400' : 'bg-slate-100 hover:bg-slate-200 text-slate-500'}`}>
               <X size={18} />
             </button>
 
@@ -88,13 +96,13 @@ export default function StreakCalendar({ userData, isDark }) {
 
             {/* Calendar Control */}
             <div className="flex justify-between items-center mb-6">
-              <button onClick={prevMonth} className={`p-2 rounded-2xl transition-colors ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}>
+              <button onClick={prevMonth} aria-label="Tháng trước" className={`p-2 rounded-2xl transition-colors ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}>
                 <ChevronLeft size={20} />
               </button>
               <span className={`font-black text-sm uppercase tracking-widest ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                 {format(currentMonth, "MMMM yyyy")}
               </span>
-              <button onClick={nextMonth} className={`p-2 rounded-2xl transition-colors ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}>
+              <button onClick={nextMonth} aria-label="Tháng sau" className={`p-2 rounded-2xl transition-colors ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}>
                 <ChevronRight size={20} />
               </button>
             </div>

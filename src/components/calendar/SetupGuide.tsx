@@ -1,7 +1,11 @@
 import React from 'react';
 import { Calendar as CalIcon, ExternalLink } from 'lucide-react';
 
-export default function SetupGuide({ isDark }) {
+interface SetupGuideProps {
+  isDark: boolean;
+}
+
+export default function SetupGuide({ isDark }: SetupGuideProps) {
   return (
     <div className={`p-8 rounded-[2.5rem] text-center space-y-6 ${isDark ? 'bg-slate-800/60 border border-slate-700' : 'bg-white border shadow-xl'}`}>
       <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-br from-indigo-500 to-pink-500 flex items-center justify-center shadow-lg">

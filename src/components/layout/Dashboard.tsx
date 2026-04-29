@@ -3,7 +3,7 @@ import { Gift, Clock } from 'lucide-react';
 import { SHOP_ITEMS } from '../../utils/constants';
 import type { UserData, Task, TeamMember, LevelInfo } from '../../utils/helpers';
 
-const StatsView = React.lazy(() => import('../stats/StatsView.jsx'));
+const StatsView = React.lazy(() => import('../stats/StatsView'));
 const ShopView = React.lazy(() => import('../shop/ShopView.jsx'));
 interface StatsViewProps {
   tasks: Task[];
@@ -21,8 +21,8 @@ interface StatsViewProps {
   onRefreshDailyQuest: () => void;
   onCompleteDailyQuest: () => void;
   currentTab: string;
-  onRenameMascot: (name: string) => void;
-  onChangeMascotAvatar: (config: Record<string, any>) => void;
+  onRenameMascot: () => void;
+  onChangeMascotAvatar: () => void;
   partnerTask?: Task;
   myRunningTask?: Task;
   now: number;
@@ -67,8 +67,8 @@ interface DashboardProps {
   onRefreshDailyQuest: () => void;
   onCompleteDailyQuest: () => void;
   currentTab: string;
-  onRenameMascot: (name: string) => void;
-  onChangeMascotAvatar: (config: Record<string, any>) => void;
+  onRenameMascot: () => void;
+  onChangeMascotAvatar: () => void;
   partnerTask?: Task;
   myRunningTask?: Task;
   now: number;

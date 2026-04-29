@@ -4,7 +4,25 @@ import Card from '../../../shared/Card';
 import Badge from '../../../shared/Badge';
 import Button from '../../../shared/Button';
 
-export default function DailyQuestWidget({ isDark, quest, onRefresh, onComplete }) {
+interface DailyQuest {
+  isCompleted: boolean;
+  dateKey?: string;
+  title: string;
+  goal: string;
+  rewardGold: number;
+  completedAt: number;
+  completedByName: string;
+  deadline: string;
+}
+
+interface DailyQuestWidgetProps {
+  isDark: boolean;
+  quest?: DailyQuest | null;
+  onRefresh: () => void;
+  onComplete: () => void;
+}
+
+export default function DailyQuestWidget({ isDark, quest, onRefresh, onComplete }: DailyQuestWidgetProps) {
   const isCompleted = quest?.isCompleted;
 
   return (
@@ -44,14 +62,14 @@ export default function DailyQuestWidget({ isDark, quest, onRefresh, onComplete 
                 <Coins size={12} /> {isCompleted ? 'Đã nhận' : `+${quest?.rewardGold || 500}`} Gold
               </Badge>
               <Badge className={isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'}>
-                {isCompleted ? `Xong lúc ${new Date(quest.completedAt).toLocaleTimeString('vi', {hour:'2-digit', minute:'2-digit'})}` : `Deadline ${quest?.deadline || '12:00'}`}
+                {isCompleted && quest?.completedAt ? `Xong lúc ${new Date(quest.completedAt).toLocaleTimeString('vi', {hour:'2-digit', minute:'2-digit'})}` : `Deadline ${quest?.deadline || '12:00'}`}
               </Badge>
             </div>
           </div>
 
           {isCompleted ? (
             <div className="px-6 py-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 font-black text-xs uppercase tracking-widest flex items-center gap-2">
-              <Check size={16} /> Hoàn thành bởi {quest.completedByName}
+              <Check size={16} /> Hoàn thành bởi {quest?.completedByName}
             </div>
           ) : (
             <button 

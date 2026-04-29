@@ -8,7 +8,10 @@ export const subscribeToTasks = (callback: (tasks: Task[]) => void, onError?: (e
   try {
     const q = collection(db, 'artifacts', appId, 'public', 'data', 'tasks');
     return onSnapshot(q, (snapshot) => {
-      const tasks = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as Task));
+      const tasks = snapshot.docs.map(docSnap => {
+        const data = docSnap.data();
+        return { ...data, id: docSnap.id } as Task;
+      });
       callback(tasks);
     }, (error) => {
       if (onError) onError(error);

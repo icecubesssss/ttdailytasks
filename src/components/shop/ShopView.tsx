@@ -1,7 +1,15 @@
 import React from 'react';
 import { SHOP_ITEMS } from '../../utils/constants';
+import type { UserData, LevelInfo, ShopItem } from '../../utils/helpers';
 
-export default function ShopView({ userData, levelInfo, isDark, onBuyItem }) {
+interface ShopViewProps {
+  userData: UserData;
+  levelInfo: LevelInfo;
+  isDark: boolean;
+  onBuyItem: (item: ShopItem) => void;
+}
+
+export default function ShopView({ userData, levelInfo, isDark, onBuyItem }: ShopViewProps) {
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

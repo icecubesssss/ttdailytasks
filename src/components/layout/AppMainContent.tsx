@@ -54,8 +54,8 @@ interface AppMainContentProps {
   handleTabChange: (tab: string) => void;
   dailyQuest: DailyQuest | null;
   handleRefreshDailyQuest: () => void;
-  handleRenameMascot: (name: string) => void;
-  handleChangeMascotAvatar: (config: Record<string, any>) => void;
+  handleRenameMascot: () => void;
+  handleChangeMascotAvatar: () => void;
   partnerTask?: Task;
   myRunningTask?: Task;
   onCompleteDailyQuest: () => void;

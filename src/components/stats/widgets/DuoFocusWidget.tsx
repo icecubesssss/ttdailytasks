@@ -1,23 +1,45 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Flame } from 'lucide-react';
 import Card from '../../../shared/Card';
 import Badge from '../../../shared/Badge';
+import { Task } from '../../../utils/helpers';
 
-const getTrackedMs = (task, now) => {
+const getTrackedMs = (task: Task | null | undefined, now: number): number => {
   if (!task) return 0;
   const base = task.totalTrackedTime || 0;
   if (task.status === 'running' && task.lastStartTime) return base + (now - task.lastStartTime);
   return base;
 };
 
-const fmt = (ms) => new Date(Math.max(0, ms)).toISOString().substr(11, 8).replace(/^00:/, '');
+const fmt = (ms: number): string => new Date(Math.max(0, ms)).toISOString().substr(11, 8).replace(/^00:/, '');
 
-export default function DuoFocusWidget({ isDark, myTask, partnerTask, myName, partnerName, now }) {
-  if (!myTask || !partnerTask) return null;
+interface DuoFocusWidgetProps {
+  isDark: boolean;
+  myTask?: Task | null;
+  partnerTask?: Task | null;
+  myName: string;
+  partnerName: string;
+  now: number;
+}
+
+export default function DuoFocusWidget({ isDark, myTask, partnerTask, myName, partnerName, now }: DuoFocusWidgetProps) {
+  const myBarRef = useRef<HTMLDivElement>(null);
+  const partnerBarRef = useRef<HTMLDivElement>(null);
 
   const myMs = getTrackedMs(myTask, now);
   const partnerMs = getTrackedMs(partnerTask, now);
   const total = Math.max(myMs, partnerMs, 1);
+
+  useEffect(() => {
+    if (myBarRef.current) {
+      myBarRef.current.style.width = `${(myMs / total) * 100}%`;
+    }
+    if (partnerBarRef.current) {
+      partnerBarRef.current.style.width = `${(partnerMs / total) * 100}%`;
+    }
+  }, [myMs, partnerMs, total]);
+
+  if (!myTask || !partnerTask) return null;
 
   return (
     <Card isDark={isDark} className="md:col-span-6">
@@ -36,7 +58,7 @@ export default function DuoFocusWidget({ isDark, myTask, partnerTask, myName, pa
             <span>{myName}</span><span>{fmt(myMs)}</span>
           </div>
           <div className="h-2 rounded-full bg-slate-700/30 overflow-hidden">
-            <div className="h-full bg-indigo-500 rounded-full transition-all duration-500" style={{ width: `${(myMs / total) * 100}%` }} />
+            <div ref={myBarRef} className="h-full bg-indigo-500 rounded-full transition-all duration-500" />
           </div>
         </div>
         <div>
@@ -44,7 +66,7 @@ export default function DuoFocusWidget({ isDark, myTask, partnerTask, myName, pa
             <span>{partnerName}</span><span>{fmt(partnerMs)}</span>
           </div>
           <div className="h-2 rounded-full bg-slate-700/30 overflow-hidden">
-            <div className="h-full bg-fuchsia-500 rounded-full transition-all duration-500" style={{ width: `${(partnerMs / total) * 100}%` }} />
+            <div ref={partnerBarRef} className="h-full bg-fuchsia-500 rounded-full transition-all duration-500" />
           </div>
         </div>
       </div>

@@ -5,17 +5,36 @@ import { motion as Motion, AnimatePresence } from 'framer-motion';
 import TaskItem from './TaskItem';
 import { useAudio } from '../../hooks/useAudio';
 import { useTaskActionContext } from '../../contexts/TaskActionContext';
+import type { Task, UserData } from '../../utils/helpers';
+import type { User } from 'firebase/auth';
 
-const ColumnHeader = ({ title, count, icon, colorClass }) => (
+interface ColumnHeaderProps {
+  title: string;
+  count: number;
+  icon: React.ReactElement;
+  colorClass: string;
+}
+
+const ColumnHeader: React.FC<ColumnHeaderProps> = ({ title, count, icon, colorClass }) => (
   <div className={`flex items-center justify-between p-3 rounded-2xl mb-4 font-black text-xs uppercase tracking-widest ${colorClass}`}>
     <div className="flex items-center gap-2">{icon} {title}</div>
     <span className="px-2 py-1 bg-white/20 rounded-lg">{count}</span>
   </div>
 );
 
+interface TaskBoardProps {
+  tasks: Task[];
+  user: User | null;
+  currentAssigneeId: string | null;
+  isDark: boolean;
+  now: number;
+  aiLoading: boolean;
+}
+
 function TaskBoard({ 
   tasks, user, currentAssigneeId, isDark, now, aiLoading 
-}) {
+}: TaskBoardProps) {
+  const nowDate = new Date(now);
   const {
     toggleTaskStatus,
     handleDeleteTask,
@@ -27,16 +46,22 @@ function TaskBoard({
     handleAiSubtasks
   } = useTaskActionContext();
 
-  const [activeTab, setActiveTab] = useState('todo'); // 'todo', 'in-progress', 'done'
-  const [timeFilter, setTimeFilter] = useState('week'); // 'week', 'month', 'all'
+  const [activeTab, setActiveTab] = useState<'todo' | 'in-progress' | 'done' | 'overdue'>('todo');
+  const [timeFilter, setTimeFilter] = useState<'week' | 'month' | 'all'>('week');
   const { playSound } = useAudio();
 
-  const handleTimeFilterChange = (filterId) => {
+  const filterOptions: Array<{ id: 'week' | 'month' | 'all'; label: string; icon: React.ReactElement }> = [
+    { id: 'week', label: 'Tuần này', icon: <Calendar size={14} /> },
+    { id: 'month', label: 'Tháng này', icon: <Layers size={14} /> },
+    { id: 'all', label: 'Tất cả', icon: <LayoutGrid size={14} /> }
+  ];
+
+  const handleTimeFilterChange = (filterId: 'week' | 'month' | 'all') => {
     playSound('click');
     setTimeFilter(filterId);
   };
 
-  const handleActiveTabChange = (tabId) => {
+  const handleActiveTabChange = (tabId: 'todo' | 'in-progress' | 'done' | 'overdue') => {
     playSound('click');
     setActiveTab(tabId);
   };
@@ -44,14 +69,14 @@ function TaskBoard({
   const filteredByTime = tasks.filter(t => {
     if (timeFilter === 'all') return true;
     const taskDate = t.deadline ? new Date(t.deadline) : new Date(t.createdAt);
-    if (timeFilter === 'week') return isSameWeek(taskDate, now, { weekStartsOn: 1 });
-    if (timeFilter === 'month') return isSameMonth(taskDate, now);
+    if (timeFilter === 'week') return isSameWeek(taskDate, nowDate, { weekStartsOn: 1 });
+    if (timeFilter === 'month') return isSameMonth(taskDate, nowDate);
     return true;
   });
 
   const sortedTasks = [...filteredByTime].sort((a,b) => b.createdAt - a.createdAt);
 
-  const isOverdue = (t) => {
+  const isOverdue = (t: Task) => {
     if (!t.deadline) return false;
     if (t.status === 'completed_late') return true;
     return t.deadline < now && t.status !== 'completed';
@@ -71,11 +96,7 @@ function TaskBoard({
 
         {/* Time Filter Switcher */}
         <div className={`flex p-1 rounded-2xl ${isDark ? 'bg-slate-800/60' : 'bg-slate-200/50'} gap-1`}>
-          {[
-            { id: 'week', label: 'Tuần này', icon: <Calendar size={14} /> },
-            { id: 'month', label: 'Tháng này', icon: <Layers size={14} /> },
-            { id: 'all', label: 'Tất cả', icon: <LayoutGrid size={14} /> }
-          ].map(f => (
+          {filterOptions.map(f => (
             <button
               key={f.id}
               onClick={() => handleTimeFilterChange(f.id)}
@@ -129,7 +150,7 @@ function TaskBoard({
               <AnimatePresence initial={false}>
                 {todoTasks.map(task => (
                   <Motion.div key={task.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-                    <TaskItem task={task} user={user} currentAssigneeId={currentAssigneeId} isDark={isDark} now={now} aiLoading={aiLoading} onStart={(id) => toggleTaskStatus(id, 'start')} onPause={(id) => toggleTaskStatus(id, 'pause')} onComplete={(id) => toggleTaskStatus(id, 'complete')} onDelete={handleDeleteTask} onPriorityChange={handlePriorityChange} onUpdateDeadline={handleUpdateDeadline} onRenameTask={handleRenameTask} onSubTaskAdd={handleSubTaskAction} onSubTaskToggle={handleSubTaskAction} onSubTaskDelete={handleSubTaskAction} onUpdateTask={handleUpdateTask} onAiSubtasks={handleAiSubtasks} />
+                    <TaskItem task={task} user={user} currentAssigneeId={currentAssigneeId} isDark={isDark} now={nowDate} aiLoading={aiLoading} onStart={(id) => toggleTaskStatus(id, 'start')} onPause={(id) => toggleTaskStatus(id, 'pause')} onComplete={(id) => toggleTaskStatus(id, 'complete')} onDelete={handleDeleteTask} onPriorityChange={handlePriorityChange} onUpdateDeadline={handleUpdateDeadline} onRenameTask={handleRenameTask} onSubTaskAdd={handleSubTaskAction} onSubTaskToggle={handleSubTaskAction} onSubTaskDelete={handleSubTaskAction} onUpdateTask={handleUpdateTask} onAiSubtasks={handleAiSubtasks} />
                   </Motion.div>
                 ))}
               </AnimatePresence>
@@ -144,7 +165,7 @@ function TaskBoard({
               <AnimatePresence initial={false}>
                 {inProgressTasks.map(task => (
                   <Motion.div key={task.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-                    <TaskItem task={task} user={user} currentAssigneeId={currentAssigneeId} isDark={isDark} now={now} aiLoading={aiLoading} onStart={(id) => toggleTaskStatus(id, 'start')} onPause={(id) => toggleTaskStatus(id, 'pause')} onComplete={(id) => toggleTaskStatus(id, 'complete')} onDelete={handleDeleteTask} onPriorityChange={handlePriorityChange} onUpdateDeadline={handleUpdateDeadline} onRenameTask={handleRenameTask} onSubTaskAdd={handleSubTaskAction} onSubTaskToggle={handleSubTaskAction} onSubTaskDelete={handleSubTaskAction} onUpdateTask={handleUpdateTask} onAiSubtasks={handleAiSubtasks} />
+                    <TaskItem task={task} user={user} currentAssigneeId={currentAssigneeId} isDark={isDark} now={nowDate} aiLoading={aiLoading} onStart={(id) => toggleTaskStatus(id, 'start')} onPause={(id) => toggleTaskStatus(id, 'pause')} onComplete={(id) => toggleTaskStatus(id, 'complete')} onDelete={handleDeleteTask} onPriorityChange={handlePriorityChange} onUpdateDeadline={handleUpdateDeadline} onRenameTask={handleRenameTask} onSubTaskAdd={handleSubTaskAction} onSubTaskToggle={handleSubTaskAction} onSubTaskDelete={handleSubTaskAction} onUpdateTask={handleUpdateTask} onAiSubtasks={handleAiSubtasks} />
                   </Motion.div>
                 ))}
               </AnimatePresence>
@@ -159,7 +180,7 @@ function TaskBoard({
               <AnimatePresence initial={false}>
                 {doneTasks.map(task => (
                   <Motion.div key={task.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-                    <TaskItem task={task} user={user} currentAssigneeId={currentAssigneeId} isDark={isDark} now={now} aiLoading={aiLoading} onStart={(id) => toggleTaskStatus(id, 'start')} onPause={(id) => toggleTaskStatus(id, 'pause')} onComplete={(id) => toggleTaskStatus(id, 'complete')} onDelete={handleDeleteTask} onPriorityChange={handlePriorityChange} onUpdateDeadline={handleUpdateDeadline} onRenameTask={handleRenameTask} onSubTaskAdd={handleSubTaskAction} onSubTaskToggle={handleSubTaskAction} onSubTaskDelete={handleSubTaskAction} onUpdateTask={handleUpdateTask} onAiSubtasks={handleAiSubtasks} />
+                    <TaskItem task={task} user={user} currentAssigneeId={currentAssigneeId} isDark={isDark} now={nowDate} aiLoading={aiLoading} onStart={(id) => toggleTaskStatus(id, 'start')} onPause={(id) => toggleTaskStatus(id, 'pause')} onComplete={(id) => toggleTaskStatus(id, 'complete')} onDelete={handleDeleteTask} onPriorityChange={handlePriorityChange} onUpdateDeadline={handleUpdateDeadline} onRenameTask={handleRenameTask} onSubTaskAdd={handleSubTaskAction} onSubTaskToggle={handleSubTaskAction} onSubTaskDelete={handleSubTaskAction} onUpdateTask={handleUpdateTask} onAiSubtasks={handleAiSubtasks} />
                   </Motion.div>
                 ))}
               </AnimatePresence>
@@ -174,7 +195,7 @@ function TaskBoard({
               <AnimatePresence initial={false}>
                 {overdueTasks.map(task => (
                   <Motion.div key={task.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-                    <TaskItem task={task} user={user} currentAssigneeId={currentAssigneeId} isDark={isDark} now={now} aiLoading={aiLoading} onStart={(id) => toggleTaskStatus(id, 'start')} onPause={(id) => toggleTaskStatus(id, 'pause')} onComplete={(id) => toggleTaskStatus(id, 'complete')} onDelete={handleDeleteTask} onPriorityChange={handlePriorityChange} onUpdateDeadline={handleUpdateDeadline} onRenameTask={handleRenameTask} onSubTaskAdd={handleSubTaskAction} onSubTaskToggle={handleSubTaskAction} onSubTaskDelete={handleSubTaskAction} onUpdateTask={handleUpdateTask} onAiSubtasks={handleAiSubtasks} />
+                    <TaskItem task={task} user={user} currentAssigneeId={currentAssigneeId} isDark={isDark} now={nowDate} aiLoading={aiLoading} onStart={(id) => toggleTaskStatus(id, 'start')} onPause={(id) => toggleTaskStatus(id, 'pause')} onComplete={(id) => toggleTaskStatus(id, 'complete')} onDelete={handleDeleteTask} onPriorityChange={handlePriorityChange} onUpdateDeadline={handleUpdateDeadline} onRenameTask={handleRenameTask} onSubTaskAdd={handleSubTaskAction} onSubTaskToggle={handleSubTaskAction} onSubTaskDelete={handleSubTaskAction} onUpdateTask={handleUpdateTask} onAiSubtasks={handleAiSubtasks} />
                   </Motion.div>
                 ))}
               </AnimatePresence>

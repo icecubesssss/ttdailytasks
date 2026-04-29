@@ -2,6 +2,16 @@ import React from 'react';
 import { X, Scissors, Sparkles, User2, CheckCircle2 } from 'lucide-react';
 import { getAvatarUrl, getAssigneeIdByEmail } from '../../utils/helpers';
 import { DEFAULT_AVATARS, FASHION_OPTIONS } from '../../utils/constants';
+import type { UserData, LevelInfo, FashionOption } from '../../utils/helpers';
+
+interface ClosetViewProps {
+  userData: UserData;
+  levelInfo: LevelInfo;
+  isDark: boolean;
+  userEmail: string;
+  onEquipItem: (category: string, value: string) => void;
+  onClose: () => void;
+}
 
 const WARDROBE_CATEGORIES = ['hair', 'hairColor', 'skinColor', 'eyes', 'mouth', 'facialHair', 'body', 'clothingColor'];
 
@@ -11,7 +21,7 @@ const getAvatarPreviewSrc = (userData, userEmail) => {
   return `${getAvatarUrl(avatarConfig)}&v=${encodeURIComponent(cacheKey)}`;
 };
 
-export default function ClosetView({ userData, levelInfo, isDark, userEmail, onEquipItem, onClose }) {
+export default function ClosetView({ userData, levelInfo, isDark, userEmail, onEquipItem, onClose }: ClosetViewProps) {
   const avatarPreviewSrc = getAvatarPreviewSrc(userData, userEmail);
 
   return (

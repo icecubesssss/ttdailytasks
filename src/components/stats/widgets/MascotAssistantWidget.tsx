@@ -2,8 +2,18 @@ import React from 'react';
 import { Bot } from 'lucide-react';
 import Card from '../../../shared/Card';
 import Button from '../../../shared/Button';
+import { UserData, Task } from '../../../utils/helpers';
 
-const buildMessage = ({ aiMode, currentTab, tasks, streak, duoActive, mascotName }) => {
+interface BuildMessageProps {
+  aiMode: string;
+  currentTab: string;
+  tasks: Task[];
+  streak: number;
+  duoActive: boolean;
+  mascotName: string;
+}
+
+const buildMessage = ({ aiMode, currentTab, tasks, streak, duoActive, mascotName }: BuildMessageProps): string => {
   const running = tasks.filter((task) => task.status === 'running').length;
   const done = tasks.filter((task) => task.status?.startsWith('completed')).length;
 
@@ -19,6 +29,16 @@ const buildMessage = ({ aiMode, currentTab, tasks, streak, duoActive, mascotName
   return `${mascotName}: Mình gợi ý bắt đầu từ task quan trọng nhất để lấy đà nha.`;
 };
 
+interface MascotAssistantWidgetProps {
+  isDark: boolean;
+  userData: UserData;
+  currentTab: string;
+  tasks: Task[];
+  duoActive: boolean;
+  onRename: () => void;
+  onChangeAvatar: () => void;
+}
+
 export default function MascotAssistantWidget({
   isDark,
   userData,
@@ -27,7 +47,7 @@ export default function MascotAssistantWidget({
   duoActive,
   onRename,
   onChangeAvatar
-}) {
+}: MascotAssistantWidgetProps) {
   const mascotName = userData.mascotName || 'Mochi';
   const mascotAvatar = userData.mascotAvatar || '🤖';
   const message = buildMessage({
