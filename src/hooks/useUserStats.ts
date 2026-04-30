@@ -194,20 +194,37 @@ export function useUserStats(user: User | null) {
 
       if (userData.lastCheckIn !== today) {
         xpEarned += DAILY_CHECKIN_XP;
-        statsUpdates.xp = (userData.xp || 0) + xpEarned;
         statsUpdates.lastCheckIn = today;
         statsUpdates.ttGold = (userData.ttGold || 0) + DAILY_CHECKIN_GOLD;
-        statsUpdates.checkInHistory = { ...(userData.checkInHistory || {}), [today]: 'active' };
+        
+        const checkInHistory = { ...(userData.checkInHistory || {}) };
+        checkInHistory[today] = 'active';
+        statsUpdates.checkInHistory = checkInHistory;
 
         if (userData.lastCheckIn) {
-          const diffDays = Math.round((new Date().setHours(0,0,0,0) - new Date(userData.lastCheckIn).setHours(0,0,0,0)) / 86400000);
-          if (diffDays === 1) statsUpdates.streak = (userData.streak || 0) + 1;
-          else if (diffDays > 1 && (userData.streakFreezes || 0) >= diffDays - 1) {
+          const lastDate = new Date(userData.lastCheckIn);
+          lastDate.setHours(0,0,0,0);
+          const currentDate = new Date();
+          currentDate.setHours(0,0,0,0);
+          
+          const diffDays = Math.round((currentDate.getTime() - lastDate.getTime()) / 86400000);
+          
+          if (diffDays === 1) {
             statsUpdates.streak = (userData.streak || 0) + 1;
-            statsUpdates.streakFreezes = userData.streakFreezes - (diffDays - 1);
-            for (let i = 1; i < diffDays; i++) statsUpdates.checkInHistory[new Date(Date.now() - i*86400000).toDateString()] = 'freeze';
-          } else statsUpdates.streak = 1;
-        } else statsUpdates.streak = 1;
+          } else if (diffDays > 1 && (userData.streakFreezes || 0) >= diffDays - 1) {
+            statsUpdates.streak = (userData.streak || 0) + 1;
+            statsUpdates.streakFreezes = (userData.streakFreezes || 0) - (diffDays - 1);
+            for (let i = 1; i < diffDays; i++) {
+              const freezeDate = new Date(currentDate.getTime() - i * 86400000).toDateString();
+              checkInHistory[freezeDate] = 'freeze';
+            }
+          } else if (diffDays > 0) {
+            statsUpdates.streak = 1;
+          }
+          // If diffDays is 0 (same day), we don't touch the streak
+        } else {
+          statsUpdates.streak = 1;
+        }
       }
 
       let goldEarned = GOLD_PER_TASK;
