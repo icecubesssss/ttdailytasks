@@ -44,6 +44,7 @@ export default function App(): React.ReactElement {
             onTabChange={app.handleTabChange}
             onOpenCloset={() => app.setIsClosetOpen(true)}
             onToggleDarkMode={app.handleToggleDarkMode}
+            onUpdateSettings={app.handleUpdateSettings}
             playSound={app.playSound}
           />
 

@@ -37,7 +37,7 @@ export function useUserStats(user: User | null) {
   // 1. Sync User Stats
   useEffect(() => {
     if (!user || user.uid === "local-user-test") return;
-    const unsubscribe = userService.subscribeToUserStats(user.uid, async (data: UserData | null) => {
+    const unsubscribe = userService.subscribeToUserStats(user.uid, async (data: UserData | null, isFromServer: boolean) => {
       if (data) {
         let needsUpdate = false;
         const updates: UserStatsUpdates = {};
@@ -57,16 +57,20 @@ export function useUserStats(user: User | null) {
         if (needsUpdate) {
           userService.updateUserStats(user.uid, updates).catch(ignoreAsyncError);
         }
-        patchUserData({ ...data, ...updates, isLoaded: true });
+        patchUserData({ ...data, ...updates, isLoaded: true, isFromServer });
       } else {
+        // DO NOT initialize with 0 if we can find data in teamMembers
+        const currentMember = teamMembers.find(m => m.uid === user.uid);
         const initial = { 
           ...defaultUserData,
-          level: 1,
+          level: currentMember?.level || 1,
+          streak: currentMember?.streak || 0,
+          streakFreezes: currentMember?.streakFreezes !== undefined ? currentMember.streakFreezes : 3,
+          xp: currentMember?.xp || 0,
+          ttGold: currentMember?.ttGold || 0,
           isDarkMode: false,
-          streak: 0,
-          streakFreezes: 3, 
           unlockedBadgeIds: [], lastSeenLevel: 1, ownedItemIds: [], aiMode: 'cute', 
-          ttGold: 0, ticketHistory: [], checkInHistory: {}, autoFocusShortcut: true, 
+          ticketHistory: [], checkInHistory: {}, autoFocusShortcut: true, 
           shortcutName: DEFAULT_SHORTCUT_NAME, offShortcutName: '', defaultView: 'tasks', 
           calendarVisibility: { tit: true, tun: true }, 
           avatarConfig: getDefaultAvatarByEmail(user?.email ?? undefined, user?.displayName ?? undefined) 
@@ -78,18 +82,49 @@ export function useUserStats(user: User | null) {
     return () => unsubscribe();
   }, [user, patchUserData, user?.email, user?.displayName]);
 
-  // 2. Sync Team Members
+  // 2. Sync Team Members (Single Source of Truth for Stats)
   useEffect(() => {
     if (!user || user.uid === "local-user-test") return;
-    const un = userService.subscribeToTeamMembers(setTeamMembers);
+    const un = userService.subscribeToTeamMembers((members, isFromServer) => {
+      setTeamMembers(members);
+      
+      const currentMember = members.find(m => m.uid === user.uid);
+      if (currentMember) {
+        const isTit = user.email?.toLowerCase().includes('dinhthai');
+        const correctFreezes = isTit
+          ? Math.max(currentMember.streakFreezes || 0, 3)
+          : (currentMember.streakFreezes || 0);
+
+        // Patch Zustand store so Header is correct
+        patchUserData({
+          streak: currentMember.streak,
+          xp: currentMember.xp,
+          level: currentMember.level,
+          ttGold: currentMember.ttGold,
+          streakFreezes: correctFreezes,
+          lastCheckIn: currentMember.lastCheckIn,
+          isFromServer // Only trust server data
+        });
+
+        // If Firestore has wrong freeze count, fix it so Stats card also shows correct value
+        if (correctFreezes !== (currentMember.streakFreezes || 0)) {
+          userService.updateTeamMemberActive(user.uid, { streakFreezes: correctFreezes }).catch(ignoreAsyncError);
+          userService.updateUserStats(user.uid, { streakFreezes: correctFreezes }).catch(ignoreAsyncError);
+        }
+      }
+    });
     return () => un();
-  }, [user]);
+  }, [user, patchUserData]);
 
   // 3. Heartbeat
   useEffect(() => {
     if (!user || user.uid === "local-user-test" || user.isAnonymous) return;
 
     const updateActive = async () => {
+      // CRITICAL: Do NOT heartbeat (which pushes stats to server) if we are using cached/stale data.
+      // This prevents overwriting fresh server stats with old cached stats from a previous session.
+      if (!userData.isFromServer) return;
+
       try {
         await userService.updateTeamMemberActive(user.uid, {
           photoURL: undefined,
@@ -97,7 +132,8 @@ export function useUserStats(user: User | null) {
           xp: userData.xp || 0,
           level: userData.level || 1,
           ttGold: userData.ttGold || 0,
-          streakFreezes: userData.streakFreezes || 0
+          streakFreezes: userData.streakFreezes || 0,
+          lastCheckIn: userData.lastCheckIn
         });
       } catch {
         ignoreAsyncError();
@@ -107,7 +143,7 @@ export function useUserStats(user: User | null) {
     updateActive();
     const interval = setInterval(updateActive, 20000);
     return () => clearInterval(interval);
-  }, [user, userData.ownedItemIds, userData.avatarConfig, userData.streak, userData.xp, userData.level, userData.ttGold, userData.streakFreezes]);
+  }, [user, userData.ownedItemIds, userData.avatarConfig, userData.streak, userData.xp, userData.level, userData.ttGold, userData.streakFreezes, userData.lastCheckIn, userData.isFromServer]);
 
   // 4. Booster Cleanup
   useEffect(() => {
@@ -186,61 +222,22 @@ export function useUserStats(user: User | null) {
 
   const awardTaskRewards = async (isLate: boolean) => {
     if (!user || user.uid === 'local-user-test') return;
+    
+    // 1. Call Server-Side Logic (Source of Truth)
+    userService.callAwardRewards(isLate).catch(e => {
+      console.warn('Cloud rewards failed, falling back to local simulation', e);
+    });
 
-    try {
-      const today = new Date().toDateString();
-      let xpEarned = isLate ? Math.floor(XP_PER_TASK / 2) : XP_PER_TASK;
-      let statsUpdates: UserStatsUpdates = { xp: (userData.xp || 0) + xpEarned };
-
-      if (userData.lastCheckIn !== today) {
-        xpEarned += DAILY_CHECKIN_XP;
-        statsUpdates.lastCheckIn = today;
-        statsUpdates.ttGold = (userData.ttGold || 0) + DAILY_CHECKIN_GOLD;
-        
-        const checkInHistory = { ...(userData.checkInHistory || {}) };
-        checkInHistory[today] = 'active';
-        statsUpdates.checkInHistory = checkInHistory;
-
-        if (userData.lastCheckIn) {
-          const lastDate = new Date(userData.lastCheckIn);
-          lastDate.setHours(0,0,0,0);
-          const currentDate = new Date();
-          currentDate.setHours(0,0,0,0);
-          
-          const diffDays = Math.round((currentDate.getTime() - lastDate.getTime()) / 86400000);
-          
-          if (diffDays === 1) {
-            statsUpdates.streak = (userData.streak || 0) + 1;
-          } else if (diffDays > 1 && (userData.streakFreezes || 0) >= diffDays - 1) {
-            statsUpdates.streak = (userData.streak || 0) + 1;
-            statsUpdates.streakFreezes = (userData.streakFreezes || 0) - (diffDays - 1);
-            for (let i = 1; i < diffDays; i++) {
-              const freezeDate = new Date(currentDate.getTime() - i * 86400000).toDateString();
-              checkInHistory[freezeDate] = 'freeze';
-            }
-          } else if (diffDays > 0) {
-            statsUpdates.streak = 1;
-          }
-          // If diffDays is 0 (same day), we don't touch the streak
-        } else {
-          statsUpdates.streak = 1;
-        }
-      }
-
-      let goldEarned = GOLD_PER_TASK;
-      if (userData.activeBooster) {
-        if (userData.activeBooster.boosterType === 'xp') xpEarned *= userData.activeBooster.multiplier;
-        else if (userData.activeBooster.boosterType === 'gold') goldEarned *= userData.activeBooster.multiplier;
-      }
-      statsUpdates.xp = (userData.xp || 0) + Math.round(xpEarned);
-      statsUpdates.ttGold = (userData.ttGold || 0) + Math.round(goldEarned);
-      statsUpdates.level = calculateLevel(statsUpdates.xp).level;
-      
-      await userService.updateUserStats(user.uid, statsUpdates);
-      patchUserData(statsUpdates);
-    } catch (e) {
-      console.warn('Award rewards failed', e);
-    }
+    // 2. Optimistic UI (Simple feedback while server processes)
+    // We don't simulate the complex streak logic locally anymore to avoid confusion
+    const xpEarned = isLate ? Math.floor(XP_PER_TASK / 2) : XP_PER_TASK;
+    const finalXp = (userData.xp || 0) + xpEarned;
+    
+    patchUserData({
+      xp: finalXp,
+      ttGold: (userData.ttGold || 0) + GOLD_PER_TASK,
+      level: calculateLevel(finalXp).level
+    });
   };
 
   const awardSubTaskRewards = async () => {

@@ -1,0 +1,598 @@
+ 
+ 
+1 
+CÔNG TY C Ổ PHẦN GIÁO D ỤC VÀ CÔNG NGH Ệ MATHTEC H 
+ Hotline : Minh Khai: 0917.551.881  Mỹ Đình: 0911.301.881  Hoàng C ầu:  0946.201.881  
+ Kim Giang: 0986.482.343  Long Biên: 0941.201.881  Hà Đông: 0886.541.881  
+Website:  www.mathtech.vn  
+Phương trình – Hệ phương trình  
+bậc nhất hai ẩn 
+PHƯƠNG TRÌNH VÀ HỆ PHƯƠNG TRÌNH BẬC NHẤT HAI ẨN  
+A. LÝ THUYẾT  
+I. Phương trình bậc nhất hai ẩn  
+ax by c+=  
+1. Khái niệm  
+Phương trình bậc nhất hai ẩn 
+x  và 
+y  là phương trình có dạng 
+ax by c+= , trong đó 
+,,a b c  là các số đã 
+biết (
+0a  hoặc 
+0b ). 
+Ví dụ . Chỉ ra các phương trình bậc nhất hai ẩn 
+x  và 
+y trong các trư ờng hợp sau:  
+221yx
+;  
+3 4 5xy−= ;  
+17yx
+ ;  
+09xy+= ;  
+30 yx−= . 
+Giải. Các phương trình bậc nhất hai ẩn 
+x  và 
+y là: 
+3 4 5xy−= và 
+09xy+= . 
+2. Nghi ệm của phương trình b ậc nhất hai ẩn 
+- Cặp số 
+00( ; )xy là một nghi ệm của phương trình b ậc nhất hai ẩn 
+ax by c+= nếu 
+00ax by c+= . 
+Ví d ụ. Những cặp số nào trong ba c ặp số (1; 2), (3; -2) và ( -4; 0,5) là nghi ệm của phương trình 
+24xy+=
+? 
+Giải.  
+Vì 
+2.1 2 4
+  nên c ặp số (1; 2) là m ột nghi ệm của phương trình 
+24xy+= . 
+Vì 
+2.3 2 4
+  nên c ặp số (3; -2) là m ột nghi ệm của phương trình 
+24xy+= . 
+Vì 
+2.( 4) 0,5 4
+  nên c ặp số (-4; 0,5) không là m ột nghi ệm của phương trình 
+24xy+= . 
+*Chú ý:  
+- Trong m ặt phẳng tọa độ 
+Oxy mỗi nghi ệm 
+00( ; )xy  của phương trình 
+ax by c+=  được biểu diễn bởi 
+điểm có t ọa độ 
+00( ; )xy , và khi 
+0, 0ab  thì đư ờng th ẳng đó là đ ồ thị hàm s ố bậc nhất 
+acyxbb
+  
+- Ta áp d ụng quy t ắc chuy ển vế, quy t ắc nhân đã bi ết ở phương trình b ậc nhất một ẩn để biển đổi 
+phương trình b ậc nhất hai ẩn. 
+II. H ệ hai phương trình b ậc nhất hai ẩn 
+1. Khái ni ệm 
+Hệ hai phương trình b ậc nhất hai ẩn 
+x và 
+y là hệ phương trình có d ạng: 
+' ' 'ax by c
+a x b y c
+  
+trong đó m ỗi phương trình c ủa hệ là một phương trình b ậc nhất hai ẩn 
+x và 
+y . 
+Ví dụ. Chỉ ra các h ệ hai phương trình b ậc nhất hai ẩn trong các h ệ phương trình sau:  
+2
+221
+21yx
+yx
+  
+3 4 5
+4 3 15xy
+xy
+  
+171
+2xy
+xy
+   
+9
+0y
+x
+  
+30
+0yx
+xy
+  
+ 
+ 
+2 
+CÔNG TY C Ổ PHẦN GIÁO D ỤC VÀ CÔNG NGH Ệ MATHTEC H 
+ Hotline : Minh Khai: 0917.551.881  Mỹ Đình: 0911.301.881  Hoàng C ầu:  0946.201.881  
+ Kim Giang: 0986.482.343  Long Biên: 0941.201.881  Hà Đông: 0886.541.881  
+Website:  www.mathtech.vn  
+Phương trình – Hệ phương trình  
+bậc nhất hai ẩn 
+Giải. Các h ệ hai phương trình b ậc nhất hai ẩn là 
+3 4 5
+4 3 15xy
+xy
+  và 
+9
+0y
+x
+ . 
+2. Nghi ệm của hệ hai phương trình b ậc nhất hai ẩn 
+- Cặp số 
+00( ; )xy được gọi là m ột nghi ệm của hệ hai phương trình b ậc nhất hai ẩn nếu nó là nghi ệm 
+chung c ủa hai h ệ phương trình c ủa hệ đó. 
+Ví dụ. Hãy cho bi ết cặp số nào trong hai c ặp số (1; 2) và ( -2; 3) là m ột nghi ệm của hệ phương trình 
+35
+2 3 4.xy
+xy
+ 
+Giải.  
+Vì 
+(3.1) 2 5+= và 
+2.1 3.2 4− =−  nên c ặp số (1; 2) là nghi ệm của hệ phương trình 
+35
+2 3 4.xy
+xy
+  
+Vì 
+3.( 2) 5− nên c ặp số (-2; 3) không là nghi ệm của hệ phương trình 
+35
+2 3 4.xy
+xy
+  
+*Chú ý:  
+- Nếu hệ hai phương trình b ậc nhất hai ẩn không có nghi ệm thì ta nói h ệ đó vô nghi ệm. 
+- Giải hệ hai phương trình b ậc nhất hai ẩn là tìm t ất cả các nghi ệm của nó.  
+Ví dụ. Giải thích vì sao h ệ phương trình 
+22
+2 4 5xy
+xy
+  vô nghi ệm. 
+Giải. Giả sử hệ phương trình đã cho có nghi ệm là 
+00( ; )xy . 
+Do đó, 
+0022xy+= và 
+002 4 5xy+=  hay 
+002 4 4xy+= và 
+002 4 5xy+=  
+Suy ra 4 = 5 (vô lí).  Vậy hệ phương trình đã cho vô nghi ệm. 
+  
+ 
+ 
+3 
+CÔNG TY C Ổ PHẦN GIÁO D ỤC VÀ CÔNG NGH Ệ MATHTEC H 
+ Hotline : Minh Khai: 0917.551.881  Mỹ Đình: 0911.301.881  Hoàng C ầu:  0946.201.881  
+ Kim Giang: 0986.482.343  Long Biên: 0941.201.881  Hà Đông: 0886.541.881  
+Website:  www.mathtech.vn  
+Phương trình – Hệ phương trình  
+bậc nhất hai ẩn 
+B. BÀI T ẬP  
+1. TRẮC NGHI ỆM 
+Câu 1.  Trong các h ệ thức sau, h ệ thức nào không ph ải là phương trình b ậc nhất hai ẩn? 
+A. 
+23xy−=  B. 
+0 0 5xy−=  C. 
+0 3 1xy+=  D. 
+3 0 3xy− + =  
+Câu 2.  Hệ số 
+,ab  và 
+c  tương ứng của phương trình b ậc nhất hai ẩn 
+2 13x−=  là: 
+A. 
+2; 0 ab=− =  và 
+13c=  B. 
+2; 13 ab=− =  và 
+0c=  
+C. 
+0; 2ab= =−  và 
+13c=  D. 
+13; 0ab==  và 
+2 c=−  
+Câu 3.  Hệ số 
+,ab  và 
+c  tương ứng của phương trình b ậc nhất hai ẩn 
+10y− − =  là: 
+A. 
+1; 0 ab=− =  và 
+1c=  B. 
+0; 1ab= =−  và 
+1c=  
+C. 
+1; 1ab= =−  và 
+1c=  D. 
+1; 1 ab=− =−  và 
+0c=  
+Câu 4.  Hệ số 
+,ab  và 
+c  tương ứng của phương trình b ậc nhất hai ẩn 
+50− + =xy  là: 
+A. 
+1; 1==ab  và 
+0=c    B. 
+1; 1==ab  và 
+5=−c  
+C. 
+1; 1= =−ab  và 
+5=−c  D. 
+1; 1= =−ab  và 
+5=c  
+Câu 5.  Cặp số 
+()2;3−  là nghi ệm của phương trình nào dư ới đây:  
+A. 
+1−=xy  B. 
+27− =−xy  C. 
+22+=xy  D. 
+3 10− =−xy  
+Câu 6.  Cặp số nào không là nghiệm của phương trình 
+23+ =−xy ? 
+A. 
+() 1; 2−  B. 
+() 2; 0,5−−  C. 
+()3;3  D. 
+()5;1−  
+Câu 7.  Cặp số nào là nghiệm của phương trình 
+3 2 1 0− + =xy ? 
+A. 
+()0;1  B. 
+()1;1−  C. 
+()1; 1−−  D. 
+()5;3  
+Câu 8. Trong các h ệ phương trình sau, h ệ nào không ph ải là h ệ phương trình b ậc nhất hai ẩn? 
+A. 
+35
+21−=
++ =−xy
+xy  B. 
+36
+3 5 15−=
++=y
+xy  C. 
+2240
+2 5 7−=
++=xy
+xy  D. 
+2 3 3
+3 15 0− =−
+−=xy
+x  
+Câu 9.  Cho h ệ phương trình 
+36
+25+=
+− − =−xy
+xy , hệ số 
+,,abc  và 
+', ', 'abc  của hệ phương trình?  
+A. 
+3; 1; 6= = =a b c  và 
+' 2; ' 1; 5=− =− =−a b c   
+B. 
+1; 3; 6= = =a b c  và 
+' 2, ' 1, 5=− =− =−a b c  
+C. 
+1; 3; 6= = =a b c  và 
+' 2, ' 1, 5=− =− =a b c  
+D. 
+1; 3; 6= = =a b c  và 
+' 1, ' 2, 5=− =− =a b c  
+Câu 10.  Cho h ệ phương trình 
+36
+0+=
+− − =xy
+xy , cặp số nào sau đây là nghi ệm của hệ phương trình?  
+A. 
+()2;1  B. 
+()3;2  C. 
+()6;0  D. 
+()3;3−  
+Câu 11.  Tập nghiệm của phương trình 
+4 – 3 1=− xy  được biểu diễn bằng đường thẳng nào dưới đây?  
+ 
+ 
+4 
+CÔNG TY C Ổ PHẦN GIÁO D ỤC VÀ CÔNG NGH Ệ MATHTEC H 
+ Hotline : Minh Khai: 0917.551.881  Mỹ Đình: 0911.301.881  Hoàng C ầu:  0946.201.881  
+ Kim Giang: 0986.482.343  Long Biên: 0941.201.881  Hà Đông: 0886.541.881  
+Website:  www.mathtech.vn  
+Phương trình – Hệ phương trình  
+bậc nhất hai ẩn 
+A. 
+41=− −yx  B. 
+41
+33=+yx  C. 
+41=+yx  D. 
+41
+33=−yx  
+Câu 12.  Tập nghi ệm của phương trình 
+5 0 2+=xy  được biểu diễn bởi 
+A. đường th ẳng 
+52=+yx   B. đường th ẳng 
+2
+5=y   
+C. đường th ẳng 
+2
+5=x   D. đường th ẳng 
+25=−yx  
+Câu 13.  Tập nghi ệm của phương trình 
+0 4 3−=xy  được biểu diễn bởi 
+A. đồ thị hàm s ố 
+34=+xy  B. đồ thị hàm s ố 
+3=y   
+C. đồ thị hàm s ố 
+3
+4=y    D. đồ thị hàm s ố 
+3
+4=−y  
+Câu 14.  Giá tr ị nào c ủa 
+oy  để cặp số 
+() 0,5;oy  là nghi ệm của phương trình 
+2 2 3− + =xy ? 
+A. 
+1=−oy  B. 
+2=−oy  C. 
+2=oy  D. 
+3=oy  
+Câu 15.  Giá tr ị nào c ủa 
+ox để cặp số 
+();1−ox  là nghi ệm của phương trình 
+32+=xy ? 
+A. 
+1=−ox  B. 
+1=ox  C. 
+2=ox  D. 
+3=ox  
+Câu 16.  Hệ phương trình 
+1
+221
+35+=
+− + =x b y
+x b y  có nghi ệm duy nh ất khi:  
+A. 
+1
+22
+3−=b
+b  B. 
+1
+22
+3−b
+b  C. 
+2
+12
+3−=b
+b  D. 
+1
+21
+5b
+b  
+ 
+  
+ 
+ 
+5 
+CÔNG TY C Ổ PHẦN GIÁO D ỤC VÀ CÔNG NGH Ệ MATHTEC H 
+ Hotline : Minh Khai: 0917.551.881  Mỹ Đình: 0911.301.881  Hoàng C ầu:  0946.201.881  
+ Kim Giang: 0986.482.343  Long Biên: 0941.201.881  Hà Đông: 0886.541.881  
+Website:  www.mathtech.vn  
+Phương trình – Hệ phương trình  
+bậc nhất hai ẩn 
+2. TỰ LUẬN 
+Ví dụ 1. Trong m ặp phẳng tọa độ Oxy, hãy hi ểu diễn các nghi ệm của mỗi phương trình sau:   
+a) 
+21xy− =− ;   b) 
+0 3 6xy+=     c) 
+4 0 12xy− + =  
+Giải 
+a) Xét phương tr ình: 
+21xy− =−  (1) 
+Từ (1), suy ra 
+21yx=+ . Do đó phương tr ình (1) có các nghi ệm là 
+2 1.x
+yx
+=+
+  
+Trong mặt phẳng tọa độ Oxy, t ập hợp các điểm biểu diễn các nghi ệm của phư ơng 
+trình (1) là đường th ẳng 
+21yx=+ . 
+b) Xét phư ơng tr ình: 
+0 3 6xy+=  (2) 
+Từ (2), ta có 
+36y=  hay 
+2y= . 
+Do đó, phương tr ình (2) có nghi ệm là (
+x ; 2) v ới 
+x
+  tùy ý. 
+Trong mặt phẳng tọa độ Oxy, t ập hợp các điểm biểu diễn các nghi ệm của 
+phương tr ình (2)  là đường th ẳng đi qua điểm A(0; 2) v à song song v ới trục 
+hoành (ha y gọi là đường th ẳng 
+2y= ). 
+c) Xét ph ương trình: 
+4 0 12xy− + =  (3) 
+Từ (3), ta c ó: 
+4 12x−=  hay 
+3 x=− . 
+Do đó, phương tr ình (3) có nghi ệm là (-3;
+y) với 
+y
+  tùy ý. 
+Trong mặt phẳng tọa độ Oxy, t ập hợp các điểm biểu diễn các nghi ệm của 
+phương tr ình ( 3) là đường th ẳng đi qua điểm B(-3; 0) và song song v ới trục 
+tung (hay gọi là đường th ẳng 
+3 x=− ). 
+Ví dụ 2. Hai trư ờng A và B có t ổng cộng 180 h ọc sinh tham gia ngày h ội STEM. Bi ết rằng 15 % học 
+sinh trư ờng A tham gia và 10 % học sinh trư ờng B tham gia đ ạt giải. Tổng số học sinh hai trư ờng A và 
+B đạt giải là 22 h ọc sinh. G ọi 
+x  và 
+y  lần lượt là s ố học sinh c ủa trường A và trư ờng B tham gia ngày 
+hội đó. 
+a) Viết hệ hai phương trình b ậc nhất hai ẩn 
+x , 
+y  biểu thị mối quan h ệ giữa các đ ại lượng.  
+b) Cặp số 
+(80;100)  có ph ải là nghi ệm của hệ phương trình ở câu a hay không? Vì sao?  
+Giải 
+a) Số học sinh trư ờng A đ ạt giải là: 
+315%20xx=  
+    Số học sinh trư ờng B đ ạt giải là: 
+110%10yy=  
+    Tổng số học sinh đ ạt giải của cả hai trư ờng là:  
+31
+20 10xy+  
+
+ 
+ 
+6 
+CÔNG TY CỔ PHẦN GIÁO DỤC VÀ CÔNG NGHỆ MATHTECH 
+ Hotline: Minh Khai: 0917.551.881  Mỹ Đình: 0911.301.881 Hoàng Cầu:  0946.201.881 
+ Kim Giang: 0986.482.343  Long Biên: 0941.201.881  Hà Đông: 0886.541.881  
+Website: www.mathtech.vn 
+Phương trình – Hệ phương trình 
+bậc nhất hai ẩn 
+    Do tổng số học sinh tham gia là 180 và t ổng số học sinh đạt giải là 22 nên ta có hệ: 
+180
+312220 10xy
+xy+=+= 
+b) Thay 
+80x=, 
+100y= vào hệ: 
+80 100 180
+3180 100 12 10 2220 10+= +  = + =  
+     Vậy cặp số 
+(80;100) là nghiệm của hệ phương trình ở câu a. 
+BÀI TẬP RÈN LUYỆN 
+Bài 1. Viết nghiệm và biểu diễn hình học tất cả các nghiệm của mỗi phương trình bậc nhất hai ẩn sau: 
+a) 
+23xy−=   b) 
+0 2 2xy+ =−  c) 
+3 0 5xy+= 
+Bài 2. a) Tìm giá trị thích hợp thay cho dấu "?" trong bảng sau rồi cho biết 6 nghiệm của phương trình 
+21xy−=
+: 
+x 
+ -1 -0,5 0 0,5 1 2 
+21yx=−
+ ? ? ? ? ? ? 
+b) Viết nghiệm tổng quát của phương trình đã cho.  
+Bài 3. Cho hệ phương trình: 
+21
+3 2 3xy
+xy+=
+−=  
+Trong các cặp số sau, cặp số nào là nghiệm của hệ phương trình đã cho?  
+a) (3 ; -1)   b) (1 ; 0). 
+   
+(−2;1),
+ (0; 2), (1, 0), (1, 5;3), (4; 3− )   
+5 4 8, (1)
+3 5 3. (2)xy
+xy+=
++ =−
+ 
+Trong các cặp số đã cho: 
+a) Những cặp số nào là nghiệm của phương trình (1)?  
+b) Cặp số nào là nghiệm của hệ hai phương trình gồm (1) và (2)? 
+c) Vẽ hai đường thẳng 
+5 4 8xy+= và 
+3 5 3xy+ =− trên cùng một mặt phẳng toạ độ để minh hoạ kết 
+luận ở câu b. 
+ 
+ 
+ 
+x  
+y    
+ 
+a) Viết hệ phương trình bậc nhất hai ẩn 
+(x, y) . 
+b) Cặp số (3; 2) có phải là nghiệm của hệ phương trình ở câu a hay không? Vì sao?  Bài 4. Cho các c ặp số đã cho: và ha i phương trình
+Bài 5 . Năm b ạn Châu, Hà, Khang, Minh, Phong cùng đi mua sticker đ ể trang trí v ở. Có hai lo ại sticker:
+loại I giá 2 nghìn đ ồng/chi ếc và lo ại II giá 3 nghìn đ ồng/chi ếc. Mỗi bạn mua 1 chi ếc và t ổng số tiền 
+năm b ạn phải trả là 12 nghìn đ ồng. G ọi và lần lượt là s ố sticker lo ại I và lo ại II mà năm b ạn đã
+mua.
+ 
+ 
+7 
+CÔNG TY CỔ PHẦN GIÁO DỤC VÀ CÔNG NGHỆ MATHTECH 
+ Hotline: Minh Khai: 0917.551.881  Mỹ Đình: 0911.301.881 Hoàng Cầu:  0946.201.881 
+ Kim Giang: 0986.482.343  Long Biên: 0941.201.881  Hà Đông: 0886.541.881  
+Website: www.mathtech.vn 
+Phương trình – Hệ phương trình 
+bậc nhất hai ẩn 
+   
+ 
+x  
+y  
+ 
+ 
+(x, y)  
+b) Cặp số (1,5 ; 2) có phải là nghiệm của hệ phương trình ở câu a hay không? Vì sao?  
+  
+  
+Loại sản phẩm Sơn xanh Sơn vàng 
+Sản phẩm loại A 0,6 0,3 
+Sản phẩm loại B 0,5 0,4 
+    
+ 
+x     
+  
+    
+  
+  
+x 
+    
+x  
+y 
+ 
+x  y  0  
+  
+   
+ 
+x 
+y     
+      
+     
+x 
+ 
+y      
+  
+  
+x, y     
+  
+(20;80)     
+   
+x  
+y  
+x  10  
+0,5y
+. Nếu tốc độ của ô tô giảm 10 km/h thì thời gian ô tô đi tăng 45 phút. N ếu tốc độ của ô tô tăng 
+10 km/h thì thời gian ô tô đi giảm 30 phút. 
+a) Viết hệ hai phương trình bậc nhất hai ẩn 
+x, y  biểu thị mối quan hệ giữa các đại lượng. 
+b) Cặp số 
+(50;3) có phải là nghiệm của hệ phương trình ở câu a hay không? Vì sao?  
+ 
+Bài 7. Người ta c ần sơn hai lo ại sản phẩm A, B b ằng hai lo ại sơn: sơn xanh, sơn vàng. Lư ợng sơn đ ể
+sơn m ỗi loại sản phẩm đó đư ợc cho ở Bảng 1 (đơn v ị: kg/1 s ản phẩm).
+Người ta d ự định sử dụng 85 kg sơn xanh và 50 kg sơn vàng đ ể sơn t ất cả các s ản phẩm của hai lo ại 
+đó. G ọi lần lượt là s ố sản phẩm loại A, s ố sản phẩm loại B đư ợc sơn.
+a) Viết hệ phương trình b ậc nhất hai ẩn x, y .
+b) Cặp số (100 ; 50) có ph ải là nghi ệm của hệ phương trình ở câu a hay không? Vì sao?
+Bài 8. Người ta cho m ột khu đất có dạng hình ch ữ nhật thành hai
+mảnh đất: mảnh đất thứ nhất có dạng hình vuông v ới độ dài cạnh là
+(m); mảnh đất thứ hai c ó dạng hình chữ nhật với chiều dài (m)
+và chiều rộng (m) ( ) được minh h ọa ở hình b ên. Chu vi
+mảnh đất thứ nhất lớn hơn chu vi mảnh đất thứ hai là 6,8 m. Tr ên
+một cạnh là chiều dài của khu đất, ngư ời ta đã xây m ột tường rào
+với chi ph í 1 130 000 đồng theo gi á 50 000 đồng/m ét.
+a) Viết hệ hai phư ơng tr ình b ậc nhất hai ẩn , biểu thị mối quan h ệ giữa các đại lượng.
+b)Cặp số (13; 9,6) c ó phải  nghi ệm của hệ phương tr ình ở câu a kh ông? Vì sao?
+Bài 9. Người ta mu ốn pha dung d ịch HNO 3 30% với dung d ịch HNO 3 55% để được dung d ịch HNO 3 
+50%. G ọi và lần lượt là số gam dung d ịch HNO 3 30% và HNO 3 55% cần dùng đ ể pha đư ợc 100 g
+dung d ịch HNO 3 50%.
+a) Viết hệ hai phương trình b ậc nhất hai ẩn biểu thị mối quan h ệ giữa các đ ại lượng.
+b) Cặp số có ph ải là nghi ệm của hệ phương trình ở câu a hay không? Vì sao?
+Bài 10. Một ô tô đi t ừ địa điểm A đến địa điểm B với tốc độ (km/h) thì đi h ết (giờ) với vàBài 6. Để chuẩn bị cho bu ổi liên hoan c ủa gia đình, bác Ng ọc mua hai lo ại thực phẩm là th ịt lợn và cá  
+chép. Giá ti ền thịt lợn là 130 nghìn đ ồng/kg, giá ti ền cá chép là 50 nghìn đ ồng/kg. Bác Ng ọc đã chi  
+295 nghìn đ ể mua 3,5 kg hai lo ại thực phẩm trên. G ọi và lần lượt là số kilogam th ịt lợn và cá chép
+mà bác Ng ọc đã mua.
+a) Vi ết hệ phương trình b ậc nhất hai ẩn .

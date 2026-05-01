@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist', 'chrome-extension', 'public/widget.js']),
+  globalIgnores(['dist', 'chrome-extension', 'public/widget.js', 'functions']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [

@@ -90,6 +90,7 @@ export interface UserData {
   mascotAvatar: string;
   autoSyncCalendar?: boolean;
   isLoaded: boolean;
+  isFromServer?: boolean;
   music: {
     currentTrackIdx: number;
     isPlaying: boolean;
@@ -108,6 +109,7 @@ export interface TeamMember {
   level?: number;
   ttGold?: number;
   streakFreezes?: number;
+  lastCheckIn?: string | null;
   avatarConfig?: AvatarConfig | null;
   ownedItemIds?: string[];
   activeBooster?: unknown;

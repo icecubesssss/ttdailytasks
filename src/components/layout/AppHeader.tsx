@@ -33,6 +33,7 @@ interface AppHeaderProps {
   onTabChange: (tab: string) => void;
   onOpenCloset: () => void;
   onToggleDarkMode: () => void;
+  onUpdateSettings: (updates: Partial<UserData>) => void;
   playSound: (soundName: string) => void;
 }
 
@@ -46,6 +47,7 @@ function AppHeader({
   onTabChange,
   onOpenCloset,
   onToggleDarkMode,
+  onUpdateSettings,
   playSound
 }: AppHeaderProps): React.ReactElement {
   const [isViewDropdownOpen, setIsViewDropdownOpen] = React.useState<boolean>(false);
@@ -92,6 +94,8 @@ function AppHeader({
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => onTabChange('stats')}
+              title="Thống kê"
+              aria-label="Xem thống kê"
               className={`p-2.5 rounded-xl border transition-all duration-300 hover:scale-105 active:scale-95 ${
                 activeTab === 'stats'
                   ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg'
@@ -104,6 +108,8 @@ function AppHeader({
             </button>
             <button
               onClick={() => onTabChange('shop')}
+              title="Cửa hàng"
+              aria-label="Vào cửa hàng"
               className={`p-2.5 rounded-xl border transition-all duration-300 hover:scale-105 active:scale-95 ${
                 activeTab === 'shop'
                   ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg'
@@ -166,7 +172,26 @@ function AppHeader({
 
       <div className="flex flex-wrap items-center justify-between gap-4 py-3 px-4 rounded-[1.5rem] bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl border border-white/20 dark:border-white/5 shadow-lg">
         <div className="flex items-center gap-3">
-          <StreakCalendar userData={userData} isDark={userData.isDarkMode} />
+          <div className="relative">
+            <StreakCalendar userData={userData} isDark={userData.isDarkMode} />
+            {!userData.isFromServer && userData.isLoaded && (
+              <div className="absolute -top-2 -right-2 bg-indigo-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full animate-pulse shadow-sm z-20">
+                SYNCING
+              </div>
+            )}
+            {userData.isFromServer && userData.streak === 1 && (
+              <button 
+                onClick={() => {
+                  if (window.confirm("Khôi phục Streak về 27 ngày?")) {
+                    onUpdateSettings({ streak: 27 });
+                  }
+                }}
+                className="absolute -top-2 -left-2 bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full hover:bg-red-600 shadow-sm z-20"
+              >
+                RESTORE 27
+              </button>
+            )}
+          </div>
           <div className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 dark:text-yellow-500 font-black text-xs rounded-full">
             <Sparkles size={14} className="animate-pulse" /> {userData.ttGold} GOLD
           </div>

@@ -30,6 +30,7 @@ tmp/
 service-account*.json
 *.service-account.json
 
+#env files
 .env
-
+#env.*.local    
 .firebase

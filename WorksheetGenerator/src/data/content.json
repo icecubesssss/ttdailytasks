@@ -1,0 +1,95 @@
+{
+  "title": "HỆ PHƯƠNG TRÌNH BẬC NHẤT HAI ẨN",
+  "theme": "Modern Premium Neutral",
+  "author": "Antigravity Assistant",
+  "sections": [
+    {
+      "id": "quest_1",
+      "level": "Easy",
+      "title": "Quest 1: Người Gác Cổng (Khởi động)",
+      "time": "20 mins",
+      "description": "Nhận diện phương trình và hệ phương trình bậc nhất hai ẩn.",
+      "questions": [
+        {
+          "id": "mc1",
+          "type": "multiple_choice",
+          "content": "Trong các hệ thức sau, hệ thức nào không phải là phương trình bậc nhất hai ẩn?",
+          "options": ["2x - 3y = 3", "0x - 0y = 5", "0x + 3y = 1", "3x - 0y = 3"],
+          "hint": "Phương trình bậc nhất hai ẩn ax + by = c cần ít nhất a hoặc b khác 0."
+        },
+        {
+          "id": "mc2",
+          "type": "multiple_choice",
+          "content": "Hệ số a, b và c tương ứng của phương trình 2x - 1 = 3y là:",
+          "options": ["a=2, b=-3, c=1", "a=2, b=3, c=-1", "a=2, b=-3, c=-1", "a=2, b=0, c=13"],
+          "hint": "Hãy đưa phương trình về dạng chuẩn ax + by = c."
+        }
+      ]
+    },
+    {
+      "id": "quest_2",
+      "level": "Medium",
+      "title": "Quest 2: Chìa Khóa Vạn Năng (Xác thực)",
+      "time": "30 mins",
+      "description": "Kiểm tra nghiệm của phương trình và hệ phương trình.",
+      "questions": [
+        {
+          "id": "q5",
+          "type": "essay",
+          "content": "Cặp số (2; -3) là nghiệm của phương trình nào dưới đây? Giải thích vì sao.",
+          "sub_questions": ["x - y = -1", "2x - y = 7", "x + 2y = 2", "3x - y = -10"],
+          "space_lines": 5
+        }
+      ]
+    },
+    {
+      "id": "quest_3",
+      "level": "Medium-Hard",
+      "title": "Quest 3: Bản Đồ Kho Báu (Hình học)",
+      "time": "30 mins",
+      "description": "Biểu diễn nghiệm trên mặt phẳng tọa độ Oxy.",
+      "questions": [
+        {
+          "id": "ex1",
+          "type": "drawing",
+          "content": "Biểu diễn hình học tất cả các nghiệm của phương trình: 2x - y = -1",
+          "hint": "Bước 1: Rút y theo x. Bước 2: Chọn 2 điểm thuộc đường thẳng.",
+          "space_lines": 10
+        }
+      ]
+    },
+    {
+      "id": "quest_4",
+      "level": "Hard",
+      "title": "Quest 4: Bậc Thầy Luyện Kim (Vận dụng)",
+      "time": "30 mins",
+      "description": "Lập hệ phương trình cho bài toán thực tế.",
+      "questions": [
+        {
+          "id": "prob_stem",
+          "content": "Hai trường A và B có tổng cộng 180 học sinh tham gia ngày hội STEM. Biết 15% học sinh trường A và 10% học sinh trường B đạt giải. Tổng số học sinh đạt giải là 22. Tính số học sinh mỗi trường.",
+          "scaffolding_steps": [
+            "Gọi x là số hs trường A, y là số hs trường B (x, y > 0).",
+            "Thiết lập phương trình về tổng số học sinh.",
+            "Thiết lập phương trình về tổng số học sinh đạt giải."
+          ],
+          "space_lines": 15
+        }
+      ]
+    },
+    {
+      "id": "homework",
+      "title": "⚔️ NHIỆM VỤ VỀ NHÀ (Homework)",
+      "questions": [
+        {
+          "id": "hw1",
+          "content": "Bài 5: Năm bạn Châu, Hà, Khang, Minh, Phong đi mua sticker. Loại I giá 2k/chiếc, loại II giá 3k/chiếc. Tổng tiền là 12k. Lập hệ phương trình tính số sticker mỗi loại."
+        },
+        {
+          "id": "hw2",
+          "content": "Bài 9: Pha dung dịch HNO3 30% với 55% để được 100g dung dịch 50%."
+        }
+      ]
+    }
+  ]
+}
