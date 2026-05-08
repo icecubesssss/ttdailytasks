@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { User } from 'firebase/auth';
 import * as userService from '../services/userService';
 import { 
@@ -10,6 +10,8 @@ import {
   XP_PER_SUBTASK, SHOP_ITEMS, ShopItem
 } from '../utils/constants';
 import { useAppStore, defaultUserData } from '../store/useAppStore';
+
+const GIFTED_THEME_IDS = ['theme_sakura', 'theme_cyberpunk', 'theme_neon_night', 'theme_luxury_gold', 'theme_macos_26'];
 
 type UserStatsUpdates = Partial<UserData> & Record<string, unknown>;
 
@@ -33,6 +35,7 @@ export function useUserStats(user: User | null) {
   const setUserData = useAppStore((state) => state.setUserData);
   const patchUserData = useAppStore((state) => state.patchUserData);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const alertedLevelRef = useRef<number>(0);
 
   // 1. Sync User Stats
   useEffect(() => {
@@ -54,9 +57,44 @@ export function useUserStats(user: User | null) {
         if (data.mascotName === undefined) { updates.mascotName = 'Mochi'; needsUpdate = true; }
         if (data.mascotAvatar === undefined) { updates.mascotAvatar = '🤖'; needsUpdate = true; }
 
+        // Auto-gift existing themes
+        const currentOwned = data.ownedItemIds || [];
+        const missingGifts = GIFTED_THEME_IDS.filter(id => !currentOwned.includes(id));
+        if (missingGifts.length > 0) {
+          updates.ownedItemIds = [...currentOwned, ...missingGifts];
+          needsUpdate = true;
+        }
+
         if (needsUpdate) {
           userService.updateUserStats(user.uid, updates).catch(ignoreAsyncError);
         }
+        
+        // Detect level up for notification (Compare with data.lastSeenLevel to be safe)
+        const currentLevel = data.level || 1;
+        const lastSeen = data.lastSeenLevel || 1;
+        
+        // If this is the first sync and lastSeen is 1 but level is high, 
+        // we should probably sync lastSeen without alerting to avoid spamming existing users.
+        if (alertedLevelRef.current === 0) {
+          alertedLevelRef.current = currentLevel;
+          if (currentLevel > lastSeen) {
+            userService.updateUserStats(user.uid, { lastSeenLevel: currentLevel }).catch(ignoreAsyncError);
+          }
+        } else if (currentLevel > alertedLevelRef.current && currentLevel > lastSeen) {
+          alertedLevelRef.current = currentLevel;
+          
+          // Check if any shop items were unlocked at this specific level
+          const unlockedItems = SHOP_ITEMS.filter(item => item.minLevel === currentLevel);
+          const unlockMessage = unlockedItems.length > 0 
+            ? `\n\nBạn đã mở khóa vật phẩm mới: ${unlockedItems.map(i => i.name).join(', ')}!` 
+            : '';
+
+          setTimeout(() => {
+            alert(`🎉 CHÚC MỪNG! Bạn đã đạt Level ${currentLevel}!${unlockMessage}\nHãy kiểm tra Shop để nhận thưởng nhé.`);
+            userService.updateUserStats(user.uid, { lastSeenLevel: currentLevel }).catch(ignoreAsyncError);
+          }, 1000);
+        }
+
         patchUserData({ ...data, ...updates, isLoaded: true, isFromServer });
       } else {
         // DO NOT initialize with 0 if we can find data in teamMembers
@@ -223,9 +261,9 @@ export function useUserStats(user: User | null) {
   const awardTaskRewards = async (isLate: boolean) => {
     if (!user || user.uid === 'local-user-test') return;
     
-    // 1. Call Server-Side Logic (Source of Truth)
-    userService.callAwardRewards(isLate).catch(e => {
-      console.warn('Cloud rewards failed, falling back to local simulation', e);
+    // 1. Call Client-Side Transaction Logic (Spark Plan Compatible)
+    userService.callAwardRewards(user.uid, isLate).catch(e => {
+      console.warn('Rewards transaction failed', e);
     });
 
     // 2. Optimistic UI (Simple feedback while server processes)

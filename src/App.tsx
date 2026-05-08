@@ -1,4 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { 
+  Layout, 
+  ShoppingBag, 
+  LayoutDashboard, 
+  ListTree, 
+  Calendar as CalendarIcon, 
+  ChevronDown, 
+  CheckCircle2 
+} from 'lucide-react';
 import { getAssigneeIdByEmail } from './utils/helpers';
 import { useTTApp } from './hooks/useTTApp';
 
@@ -32,7 +41,7 @@ export default function App(): React.ReactElement {
 
   return (
     <AppProviders taskActions={app.taskActions}>
-      <div className={`min-h-screen transition-all duration-700 font-outfit mesh-bg ${app.userData.isDarkMode ? 'dark text-slate-100' : 'text-slate-900'} pb-24`}>
+      <div className={`min-h-screen transition-all duration-700 font-outfit mesh-bg ${app.userData.activeThemeId || ''} ${app.userData.isDarkMode ? 'dark text-slate-100' : 'text-slate-900'} pb-32`}>
         <div className="max-w-4xl mx-auto px-4 pt-8 md:pt-16">
           <AppHeader
             user={app.user}
@@ -81,6 +90,8 @@ export default function App(): React.ReactElement {
             toggleTaskStatus={app.taskActions.toggleTaskStatus}
             handleDeleteTask={app.taskActions.handleDeleteTask}
           />
+
+
 
           <AppOverlays
             isClosetOpen={app.isClosetOpen}

@@ -26,6 +26,7 @@ Last updated: 2026-04-30
 4. Hooks gọi `services/*` để sync dữ liệu
 5. UI components render theo state từ hooks/store/contexts
 6. **Reward Flow:** Client gọi `userService.callAwardRewards` -> Cloud Function `awardRewards` (Transaction) -> Cập nhật Firestore -> App nhận data qua Subscription.
+7. **Gifting & Level Up:** `useUserStats.ts` tự động kiểm tra và tặng các vật phẩm mặc định (Themes) nếu người dùng chưa có. Đồng thời theo dõi `lastSeenLevel` để kích hoạt thông báo phần thưởng khi thăng cấp.
 
 ## Key Rules
 - Không đưa business logic nặng vào component.

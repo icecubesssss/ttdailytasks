@@ -69,6 +69,7 @@ export interface UserData {
   unlockedBadgeIds: string[];
   lastSeenLevel: number;
   ownedItemIds: string[];
+  activeThemeId?: string;
   activeBooster: {
     id: string;
     multiplier: number;
@@ -97,6 +98,7 @@ export interface UserData {
     volume: number;
     isMuted: boolean;
   };
+  hasRestoredStreak?: boolean;
 }
 
 export interface TeamMember {
@@ -173,12 +175,12 @@ export interface LevelInfo {
 export const calculateLevel = (xp: number): LevelInfo => {
   let level = 1;
   let currentXp = xp;
-  let xpNeeded = Math.floor(XP_BASE * Math.pow(1.5, level - 1));
+  let xpNeeded = Math.floor(XP_BASE * Math.pow(1.6, level - 1));
 
   while (currentXp >= xpNeeded) {
     currentXp -= xpNeeded;
     level += 1;
-    xpNeeded = Math.floor(XP_BASE * Math.pow(1.5, level - 1));
+    xpNeeded = Math.floor(XP_BASE * Math.pow(1.6, level - 1));
   }
   return { level, currentXp, xpNeeded, progress: (currentXp / xpNeeded) * 100 };
 };

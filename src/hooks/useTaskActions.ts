@@ -91,7 +91,12 @@ export const useTaskActions = ({
           triggerSystemFocus(userData.offShortcutName);
       } else if (action === 'complete') {
         playSound('complete');
-        if (task.status === 'running') newTotal += currentTime - (task.lastStartTime || 0);
+        if (task.status === 'running') {
+          newTotal += currentTime - (task.lastStartTime || 0);
+        } else if (newTotal === 0 && task.limitTime && task.limitTime > 0) {
+          newTotal = task.limitTime * 60 * 1000;
+        }
+
         const isAutoScheduleComplete = options?.completionSource === 'auto_schedule';
         const isLate = isAutoScheduleComplete
           ? false

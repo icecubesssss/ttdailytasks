@@ -1,6 +1,6 @@
 export const XP_PER_TASK = 50;
 export const XP_PER_SUBTASK = 10;
-export const XP_BASE = 100;
+export const XP_BASE = 500;
 export const DAILY_CHECKIN_XP = 20;
 
 export const GOLD_PER_TASK = 50;
@@ -82,9 +82,11 @@ export const SHOP_ITEMS: ShopItem[] = [
   { id: 'freeze', type: 'utility', name: 'Streak Freeze', desc: 'Bảo vệ chuỗi làm việc khi lỡ quên.', icon: '❄️', price: 1000, minLevel: 1 },
 
   // --- THEMES ---
-  { id: 'theme_sakura', type: 'theme', name: '🌸 Theme Sakura', desc: 'Sắc hồng lãng mạn.', icon: '🌸', price: 2000, minLevel: 5 },
-  { id: 'theme_cyberpunk', type: 'theme', name: '🏙️ Theme Cyberpunk', desc: 'Tương lai huyền ảo.', icon: '🏙️', price: 2500, minLevel: 6 },
-  { id: 'theme_neon_night', type: 'theme', name: '🌃 Theme Neon Night', desc: 'Ánh đèn ban đêm rực rỡ.', icon: '🌃', price: 1500, minLevel: 4 },
+  { id: 'theme_macos_26', type: 'theme', name: '💻 macOS 26 Vision', desc: 'Giao diện tương lai với Dock floating và siêu kính.', icon: '💻', price: 15000, minLevel: 1 },
+  { id: 'theme_sakura', type: 'theme', name: '🌸 Sakura Elegance', desc: 'Sắc hồng lãng mạn, tinh tế với cánh hoa rơi.', icon: '🌸', price: 2000, minLevel: 3 },
+  { id: 'theme_cyberpunk', type: 'theme', name: '🏙️ Cyberpunk Edge', desc: 'Tương lai huyền ảo với lưới neon rực rỡ.', icon: '🏙️', price: 3000, minLevel: 5 },
+  { id: 'theme_neon_night', type: 'theme', name: '🌃 Midnight Neon', desc: 'Ánh đèn ban đêm sâu thẳm và huyền bí.', icon: '🌃', price: 1500, minLevel: 2 },
+  { id: 'theme_luxury_gold', type: 'theme', name: '👑 Luxury Gold', desc: 'Giao diện hoàng gia đẳng cấp và sang trọng.', icon: '👑', price: 10000, minLevel: 1 },
 ];
 
 export interface FashionOption {

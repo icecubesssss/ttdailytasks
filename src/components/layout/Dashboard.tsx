@@ -4,7 +4,7 @@ import { SHOP_ITEMS } from '../../utils/constants';
 import type { UserData, Task, TeamMember, LevelInfo } from '../../utils/helpers';
 
 const StatsView = React.lazy(() => import('../stats/StatsView'));
-const ShopView = React.lazy(() => import('../shop/ShopView.jsx'));
+const ShopView = React.lazy(() => import('../shop/ShopView'));
 interface StatsViewProps {
   tasks: Task[];
   isDark: boolean;
@@ -33,6 +33,7 @@ interface ShopViewProps {
   levelInfo: LevelInfo;
   isDark: boolean;
   onBuyItem: (itemId: string) => void;
+  onUpdateSettings: (updates: Partial<UserData>) => void;
 }
 
 const StatsViewTyped = StatsView as React.ComponentType<StatsViewProps>;
@@ -89,11 +90,11 @@ interface StatHistoryProps {
 
 const StatHistory = ({ isDark, userData, onUseTicket }: StatHistoryProps): React.ReactElement => (
   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-12">
-    <div className={`p-6 rounded-3xl ${isDark ? 'glass-dark' : 'glass-light shadow-lg'}`}>
+    <div className={`p-8 rounded-[2.5rem] ${isDark ? 'bg-slate-900/60 border border-slate-800' : 'bg-white border border-slate-100 shadow-xl'}`}>
       <h4 className="font-black text-xs text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-        <Gift size={16} className="text-fuchsia-500" /> Kho Vé Của Mình
+        <Gift size={16} className="text-fuchsia-500" /> Kho Vật Phẩm Của Mình
       </h4>
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {(userData.ownedItemIds || []).filter(
           (id) => SHOP_ITEMS.find((i) => i.id === id)?.type === 'ticket' || SHOP_ITEMS.find((i) => i.id === id)?.type === 'utility'
         ).length > 0 ? (
@@ -106,17 +107,19 @@ const StatHistory = ({ isDark, userData, onUseTicket }: StatHistoryProps): React
               return (
                 <div
                   key={`${ownedId}-${idx}`}
-                  className={`p-4 rounded-xl border flex items-center justify-between ${
-                    isDark ? 'bg-slate-800/40 border-slate-700' : 'bg-slate-50 border-slate-200 shadow-sm'
+                  className={`p-4 rounded-2xl border flex items-center justify-between transition-all hover:scale-[1.02] ${
+                    isDark ? 'bg-slate-800/40 border-slate-700' : 'bg-slate-50 border-slate-100 shadow-sm'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-xl">{item?.icon}</span>
-                    <span className="text-xs font-black">{item?.name}</span>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl ${isDark ? 'bg-slate-700' : 'bg-white shadow-sm'}`}>
+                      {item?.icon}
+                    </div>
+                    <span className="text-[11px] font-black uppercase">{item?.name}</span>
                   </div>
                   <button
                     onClick={() => onUseTicket(ownedId)}
-                    className="px-4 py-1.5 rounded-lg bg-emerald-600 text-white text-[10px] font-black hover:bg-emerald-700 transition-all active:scale-95"
+                    className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-[9px] font-black hover:bg-emerald-700 transition-all active:scale-95 shadow-lg shadow-emerald-500/20"
                   >
                     SỬ DỤNG
                   </button>
@@ -124,42 +127,43 @@ const StatHistory = ({ isDark, userData, onUseTicket }: StatHistoryProps): React
               );
             })
         ) : (
-          <div className="text-center py-8 border-2 border-dashed border-slate-700/20 rounded-2xl">
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Chưa có vé nào</p>
+          <div className="col-span-full text-center py-12 border-2 border-dashed border-slate-700/10 rounded-[2rem]">
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Kho đồ đang trống</p>
           </div>
         )}
       </div>
     </div>
 
-    <div className={`p-6 rounded-3xl ${isDark ? 'glass-dark' : 'glass-light shadow-lg'}`}>
+    <div className={`p-8 rounded-[2.5rem] ${isDark ? 'bg-slate-900/60 border border-slate-800' : 'bg-white border border-slate-100 shadow-xl'}`}>
       <h4 className="font-black text-xs text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-        <Clock size={16} className="text-blue-500" /> Lịch sử giao kèo
+        <Clock size={16} className="text-blue-500" /> Nhật ký giao dịch
       </h4>
-      <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+      <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
         {(userData.ticketHistory || []).length > 0 ? (
           [...(userData.ticketHistory || [])].reverse().map((log: TicketLog) => (
             <div
               key={log.id}
-              className={`p-3 rounded-xl border-l-4 ${
+              className={`p-4 rounded-2xl border-l-4 transition-all hover:bg-slate-500/5 ${
                 isDark
                   ? 'bg-slate-800/20 border-blue-500/50 text-slate-300'
-                  : 'bg-blue-50 border-blue-500/50 text-slate-600'
+                  : 'bg-blue-50/50 border-blue-500/50 text-slate-600 shadow-sm'
               }`}
             >
-              <div className="flex justify-between items-start mb-1">
-                <span className="text-[11px] font-black">{log.name}</span>
-                <span className="text-[8px] font-bold opacity-60 uppercase">
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-[11px] font-black uppercase tracking-tight">{log.name}</span>
+                <span className="text-[8px] font-bold opacity-60 uppercase bg-slate-500/10 px-2 py-0.5 rounded-full">
                   {new Date(log.usedAt).toLocaleDateString('vi')}
                 </span>
               </div>
-              <p className="text-[9px] font-bold">
-                Người dùng: <span className="text-blue-500">{log.user}</span>
+              <p className="text-[9px] font-bold flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                Sử dụng bởi: <span className="text-blue-500 font-black uppercase">{log.user}</span>
               </p>
             </div>
           ))
         ) : (
-          <div className="text-center py-8 text-[10px] font-black text-slate-500 uppercase tracking-widest">
-            Trống
+          <div className="text-center py-12 text-[10px] font-black text-slate-500 uppercase tracking-widest border-2 border-dashed border-slate-700/10 rounded-[2rem]">
+            Chưa có lịch sử
           </div>
         )}
       </div>
@@ -232,6 +236,7 @@ export default function Dashboard({
             levelInfo={levelInfo}
             isDark={isDark}
             onBuyItem={(itemId: string) => onBuyItem(itemId)}
+            onUpdateSettings={onUpdateSettings}
           />
         </Suspense>
         <StatHistory isDark={isDark} userData={userData} onUseTicket={onUseTicket} />

@@ -10,7 +10,8 @@ import {
   Calendar as CalendarIcon,
   ChevronDown,
   CheckCircle2,
-  Snowflake
+  Snowflake,
+  ExternalLink
 } from 'lucide-react';
 import StreakCalendar from '../stats/StreakCalendar.jsx';
 import { getAssigneeIdByEmail, getAvatarUrl } from '../../utils/helpers';
@@ -54,9 +55,98 @@ function AppHeader({
 
   return (
     <div className="flex flex-col gap-6 mb-8 mt-2 animate-fade-in-up">
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <h1 className="premium-logo select-none cursor-default whitespace-nowrap">TIT & TUN TASKS</h1>
-        <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end">
+
+        {/* GLOBAL NAVIGATION (DOCK SUPPORT) IN HEADER */}
+        <nav className="flex items-center gap-1.5 justify-center flex-1 relative z-[100]">
+          <button
+            onClick={() => onTabChange('stats')}
+            title="Thống kê"
+            aria-label="Xem thống kê"
+            className={`p-2 rounded-xl border transition-all duration-300 hover:scale-110 active:scale-95 ${
+              activeTab === 'stats'
+                ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg'
+                : userData.isDarkMode
+                  ? 'bg-slate-800/50 border-slate-700 text-slate-400'
+                  : 'bg-white border-slate-200 text-slate-500 shadow-sm'
+            }`}
+          >
+            <LayoutDashboard size={16} />
+          </button>
+          <button
+            onClick={() => onTabChange('shop')}
+            title="Cửa hàng"
+            aria-label="Vào cửa hàng"
+            className={`p-2 rounded-xl border transition-all duration-300 hover:scale-110 active:scale-95 ${
+              activeTab === 'shop'
+                ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg'
+                : userData.isDarkMode
+                  ? 'bg-slate-800/50 border-slate-700 text-slate-400'
+                  : 'bg-white border-slate-200 text-slate-500 shadow-sm'
+            }`}
+          >
+            <ShoppingBag size={16} />
+          </button>
+
+          <div className="relative ml-1">
+            <button
+              onClick={() => setIsViewDropdownOpen(!isViewDropdownOpen)}
+              title="Chế độ xem"
+              aria-label="Đổi chế độ xem"
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-all duration-300 ${
+                userData.isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-200 shadow-sm'
+              } ${isViewDropdownOpen ? 'ring-2 ring-indigo-500/50' : ''}`}
+            >
+              {activeTab === 'tasks' ? (
+                <Layout size={16} />
+              ) : activeTab === 'calendar' ? (
+                <CalendarIcon size={16} />
+              ) : (
+                <ListTree size={16} />
+              )}
+              <ChevronDown
+                size={12}
+                className={`opacity-50 transition-transform ${isViewDropdownOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
+
+            {isViewDropdownOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setIsViewDropdownOpen(false)}></div>
+                <div className="absolute top-full left-0 mt-2 w-48 p-2 rounded-2xl border shadow-2xl z-50 backdrop-blur-2xl bg-white/95 dark:bg-slate-900/95 dark:border-slate-700 animate-in fade-in slide-in-from-top-2 duration-200">
+                  {['tasks', 'calendar', 'list'].map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => {
+                        onTabChange(tab);
+                        setIsViewDropdownOpen(false);
+                      }}
+                      className={`flex items-center justify-between w-full px-4 py-3 text-[11px] font-black uppercase tracking-wider rounded-xl transition-all ${
+                        activeTab === tab
+                          ? 'bg-indigo-600 text-white shadow-md'
+                          : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300'
+                      }`}
+                    >
+                      {tab === 'tasks' ? 'Task Board' : tab === 'calendar' ? 'Calendar' : 'Simple List'}
+                      {activeTab === tab && <CheckCircle2 size={14} />}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          {activeTab === 'calendar' && (
+            <a href="https://calendar.google.com" target="_blank" rel="noopener"
+              className={`ml-2 flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-bold transition-all hover:scale-105 border
+                ${userData.isDarkMode ? 'bg-slate-800/50 border-slate-700 text-slate-400 hover:text-white' : 'bg-white border-slate-200 text-slate-500 hover:text-slate-700 shadow-sm'}`}>
+              <ExternalLink size={14} /> Mở GCal
+            </a>
+          )}
+        </nav>
+
+        <div className="flex items-center gap-2 w-full md:w-auto justify-center md:justify-end">
           <div
             className={`flex items-center p-1 rounded-xl border transition-all duration-300 ${
               userData.isDarkMode
@@ -90,83 +180,6 @@ function AppHeader({
           </div>
 
           <div className="h-8 w-px bg-slate-300/30 dark:bg-slate-700/30 hidden sm:block"></div>
-
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => onTabChange('stats')}
-              title="Thống kê"
-              aria-label="Xem thống kê"
-              className={`p-2.5 rounded-xl border transition-all duration-300 hover:scale-105 active:scale-95 ${
-                activeTab === 'stats'
-                  ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg'
-                  : userData.isDarkMode
-                    ? 'bg-slate-800/50 border-slate-700 text-slate-400'
-                    : 'bg-white border-slate-200 text-slate-500 shadow-sm'
-              }`}
-            >
-              <LayoutDashboard size={16} />
-            </button>
-            <button
-              onClick={() => onTabChange('shop')}
-              title="Cửa hàng"
-              aria-label="Vào cửa hàng"
-              className={`p-2.5 rounded-xl border transition-all duration-300 hover:scale-105 active:scale-95 ${
-                activeTab === 'shop'
-                  ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg'
-                  : userData.isDarkMode
-                    ? 'bg-slate-800/50 border-slate-700 text-slate-400'
-                    : 'bg-white border-slate-200 text-slate-500 shadow-sm'
-              }`}
-            >
-              <ShoppingBag size={16} />
-            </button>
-
-            <div className="relative ml-1">
-              <button
-                onClick={() => setIsViewDropdownOpen(!isViewDropdownOpen)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-all duration-300 ${
-                  userData.isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-200 shadow-sm'
-                } ${isViewDropdownOpen ? 'ring-2 ring-indigo-500/50' : ''}`}
-              >
-                {activeTab === 'tasks' ? (
-                  <Layout size={16} />
-                ) : activeTab === 'calendar' ? (
-                  <CalendarIcon size={16} />
-                ) : (
-                  <ListTree size={16} />
-                )}
-                <ChevronDown
-                  size={12}
-                  className={`opacity-50 transition-transform ${isViewDropdownOpen ? 'rotate-180' : ''}`}
-                />
-              </button>
-
-              {isViewDropdownOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setIsViewDropdownOpen(false)}></div>
-                  <div className="absolute top-full right-0 mt-2 w-40 p-1.5 rounded-xl border shadow-2xl z-50 backdrop-blur-xl bg-white/95 dark:bg-slate-900/95 dark:border-slate-700 animate-in fade-in zoom-in duration-200">
-                    {['tasks', 'calendar', 'list'].map((tab) => (
-                      <button
-                        key={tab}
-                        onClick={() => {
-                          onTabChange(tab);
-                          setIsViewDropdownOpen(false);
-                        }}
-                        className={`flex items-center justify-between w-full px-3 py-2 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${
-                          activeTab === tab
-                            ? 'bg-indigo-600 text-white'
-                            : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300'
-                        }`}
-                      >
-                        {tab === 'tasks' ? 'Board' : tab}
-                        {activeTab === tab && <CheckCircle2 size={12} />}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
         </div>
       </div>
 
@@ -179,16 +192,22 @@ function AppHeader({
                 SYNCING
               </div>
             )}
-            {userData.isFromServer && userData.streak === 1 && (
+            {userData.isFromServer && !userData.hasRestoredStreak && (
               <button 
                 onClick={() => {
-                  if (window.confirm("Khôi phục Streak về 27 ngày?")) {
-                    onUpdateSettings({ streak: 27 });
+                  const isTun = user?.email?.toLowerCase().includes('tun') || user?.email?.toLowerCase().includes('truc');
+                  const defaultVal = isTun ? "28" : "31";
+                  const val = window.prompt(`Nhập số Streak muốn khôi phục (Tit: 31, Tun: 28):`, defaultVal);
+                  if (val && !isNaN(Number(val))) {
+                    onUpdateSettings({ 
+                      streak: Number(val),
+                      hasRestoredStreak: true 
+                    });
                   }
                 }}
                 className="absolute -top-2 -left-2 bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full hover:bg-red-600 shadow-sm z-20"
               >
-                RESTORE 27
+                RESTORE
               </button>
             )}
           </div>

@@ -266,13 +266,7 @@ export default function CalendarView({
         />
       )}
 
-      <div className="flex justify-center">
-        <a href="https://calendar.google.com" target="_blank" rel="noopener"
-          className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-all hover:scale-105
-            ${isDark ? 'bg-slate-800/50 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-500 hover:text-slate-700'}`}>
-          <ExternalLink size={14} /> Mở Google Calendar để thêm lịch
-        </a>
-      </div>
+
     </div>
   );
 }

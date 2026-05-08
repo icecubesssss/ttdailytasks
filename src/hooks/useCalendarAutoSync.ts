@@ -11,7 +11,11 @@ const isOwnerKey = (value: unknown): value is OwnerKey =>
 
 interface CalendarAutoSyncProps {
   user: any;
-  userData: any;
+  userData: {
+    autoSyncCalendar?: boolean;
+    isLoaded?: boolean;
+    [key: string]: any;
+  };
   teamMembers: any[];
   tasks: any[];
   config: {
@@ -38,6 +42,9 @@ export const useCalendarAutoSync = ({
 
   const sync = useCallback(async (options?: { force?: boolean; reason?: string }) => {
     if (!user) return;
+    // Wait for userData to load from Firestore before checking settings
+    // Prevents race condition where autoSyncCalendar reads as false (store default)
+    if (!userData.isLoaded) return;
     const allowWithoutAutoSync = options?.reason === 'enter_calendar';
     if (!userData.autoSyncCalendar && !allowWithoutAutoSync) return;
     
@@ -155,7 +162,7 @@ export const useCalendarAutoSync = ({
         await addTask(newTask);
       }
     }
-  }, [user, userData.autoSyncCalendar, tasks, teamMembers, config]);
+  }, [user, userData.isLoaded, userData.autoSyncCalendar, tasks, teamMembers, config]);
 
   useEffect(() => {
     sync({ reason: 'interval_bootstrap' });
