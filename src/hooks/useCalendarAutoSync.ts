@@ -38,16 +38,12 @@ export const useCalendarAutoSync = ({
   config
 }: CalendarAutoSyncProps) => {
   const lastSyncRef = useRef<number>(0);
-  const prevAutoSyncRef = useRef<boolean>(false);
+  const isLoadedRef = useRef<boolean>(false);
 
   const sync = useCallback(async (options?: { force?: boolean; reason?: string }) => {
     if (!user) return;
-    // Wait for userData to load from Firestore before checking settings
-    // Prevents race condition where autoSyncCalendar reads as false (store default)
     if (!userData.isLoaded) return;
-    const allowWithoutAutoSync = options?.reason === 'enter_calendar';
-    if (!userData.autoSyncCalendar && !allowWithoutAutoSync) return;
-    
+
     // Sync at most once every 15 minutes to avoid API spam
     const now = Date.now();
     if (!options?.force && now - lastSyncRef.current < 15 * 60 * 1000) return;
@@ -162,7 +158,7 @@ export const useCalendarAutoSync = ({
         await addTask(newTask);
       }
     }
-  }, [user, userData.isLoaded, userData.autoSyncCalendar, tasks, teamMembers, config]);
+  }, [user, userData.isLoaded, tasks, teamMembers, config]);
 
   useEffect(() => {
     sync({ reason: 'interval_bootstrap' });
@@ -171,13 +167,12 @@ export const useCalendarAutoSync = ({
   }, [sync]);
 
   useEffect(() => {
-    const isEnabled = Boolean(userData?.autoSyncCalendar);
-    if (isEnabled && !prevAutoSyncRef.current) {
+    if (userData.isLoaded && !isLoadedRef.current) {
+      isLoadedRef.current = true;
       lastSyncRef.current = 0;
-      sync({ force: true, reason: 'autosync_enabled' });
+      sync({ force: true, reason: 'user_data_loaded' });
     }
-    prevAutoSyncRef.current = isEnabled;
-  }, [userData?.autoSyncCalendar, sync]);
+  }, [userData.isLoaded, sync]);
 
   return { triggerSync: sync };
 };

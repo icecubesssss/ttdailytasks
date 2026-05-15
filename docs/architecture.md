@@ -1,6 +1,6 @@
 # Architecture Snapshot
 
-Last updated: 2026-04-30
+Last updated: 2026-05-12
 
 ## Stack
 - React 19 + Vite
@@ -43,14 +43,16 @@ Last updated: 2026-04-30
 - **Restore Tool:** Nút khẩn cấp trong `AppHeader` xuất hiện khi phát hiện Streak bị reset về 1 (dùng cho cứu hộ dữ liệu).
 
 ### Calendar Sync
+- **Automatic Sync:** Tự động khởi tạo ngay khi `userData.isLoaded` (app boot), không cần user enable setting.
+- **Periodic Sync:** Chạy mỗi 5 phút nếu không có lỗi; tối đa 1 sync/15min để avoid API spam.
+- **Force Sync:** Xảy ra ngay khi chuyển sang tab Calendar hoặc khi userData just loaded.
 - **Source of Truth:** Fetch qua Apps Script (fallback Direct API).
-- **Auto-create task:** Xử lý tại `useCalendarAutoSync.ts`.
+- **Auto-create task:** Xử lý tại `useCalendarAutoSync.ts`. Tasks marked `isAutomated: true` để skip heartbeat.
 - **Dedupe strategy:** Ưu tiên `calendarEventId`, fallback `title + scheduledStartTime`.
-- **Force sync:** Xảy ra ngay khi chuyển sang tab Calendar.
 
 ## Debug Checklist
 - Kiểm tra ENV: `VITE_APPS_SCRIPT_URL`, `VITE_GOOGLE_CALENDAR_API_KEY`, `VITE_CALENDAR_ID_TIT`, `VITE_CALENDAR_ID_TUN`.
-- Kiểm tra User Setting: `autoSyncCalendar`.
+- Calendar sync logs: Xem console `[AutoSync] Creating automated task for event...` khi app boot.
 - Data Freshness check: Xem `isFromServer` trong Zustand store.
 - Heartbeat stale check: Xem tại `checkTaskStale` trong `helpers.ts`.
 
