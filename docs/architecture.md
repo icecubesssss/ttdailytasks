@@ -1,6 +1,6 @@
 # Architecture Snapshot
 
-Last updated: 2026-05-12
+Last updated: 2026-05-16
 
 ## Stack
 - React 19 + Vite

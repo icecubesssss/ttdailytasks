@@ -108,6 +108,7 @@ export default function App(): React.ReactElement {
             onSubTaskAdd={app.taskActions.handleSubTaskAction}
             onUpdateTask={app.taskActions.handleUpdateTask}
             triggerSystemFocus={app.triggerSystemFocus}
+            handleUpdateSettings={app.handleUpdateSettings}
             partnerTask={app.partnerTask}
             partnerInfo={app.partnerInfo || undefined}
             now={app.now}

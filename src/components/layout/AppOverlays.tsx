@@ -13,6 +13,7 @@ interface FocusViewProps {
   now: number;
   userData: UserData;
   triggerSystemFocus: (shortcutName: string) => void;
+  handleUpdateSettings: (updates: Partial<UserData>) => void;
   partnerTask?: Task;
   partnerInfo?: PartnerInfo;
 }
@@ -45,6 +46,7 @@ interface AppOverlaysProps {
   ) => Promise<void>;
   onUpdateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
   triggerSystemFocus: (shortcutName: string) => void;
+  handleUpdateSettings: (updates: Partial<UserData>) => void;
   partnerTask?: Task;
   partnerInfo?: PartnerInfo;
 }
@@ -65,6 +67,7 @@ function AppOverlays({
   onSubTaskAdd,
   onUpdateTask,
   triggerSystemFocus,
+  handleUpdateSettings,
   partnerTask,
   partnerInfo
 }: AppOverlaysProps): React.ReactElement {
@@ -87,6 +90,7 @@ function AppOverlays({
           now={now}
           userData={userData}
           triggerSystemFocus={triggerSystemFocus}
+          handleUpdateSettings={handleUpdateSettings}
           partnerTask={partnerTask}
           partnerInfo={partnerInfo}
         />

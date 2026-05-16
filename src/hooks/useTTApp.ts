@@ -86,7 +86,8 @@ export function useTTApp() {
     userData,
     teamMembers,
     tasks,
-    config
+    config,
+    awardTaskRewards // Pass reward function for auto-completion
   });
 
   useActivityResume({

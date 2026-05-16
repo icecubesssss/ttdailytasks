@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Zap, ListTree, Pause, CheckCircle2, Music, ListMusic, Play, Flame, Settings2, RotateCcw, Timer, Clock } from 'lucide-react';
+import { Zap, ListTree, Pause, CheckCircle2, Music, ListMusic, Play, Flame, Settings2, RotateCcw, Timer, Clock, StickyNote } from 'lucide-react';
 import { formatDuration, getAvatarUrl, getAssigneeIdByEmail, Task, UserData, TeamMember, AvatarConfig } from '../../utils/helpers';
 import { DEFAULT_AVATARS } from '../../utils/constants';
 import MusicSidebar from '../layout/MusicSidebar';
@@ -9,6 +9,7 @@ import { useFocusMusic } from '../../hooks/useFocusMusic';
 import TimerRing from './TimerRing';
 import FocusChecklist from './FocusChecklist';
 import MusicPrompt from './MusicPrompt';
+import QuickNoteSidebar from './QuickNoteSidebar';
 import { useTaskActionContext } from '../../contexts/TaskActionContext';
 
 type PartnerInfo = TeamMember | { displayName: string; email: string; avatarConfig?: AvatarConfig | null };
@@ -18,6 +19,7 @@ interface FocusViewProps {
   now: number;
   userData: UserData;
   triggerSystemFocus: (shortcutName: string) => void;
+  handleUpdateSettings: (updates: Partial<UserData>) => void;
   partnerTask?: Task;
   partnerInfo?: PartnerInfo;
 }
@@ -27,6 +29,7 @@ export default function FocusView({
   now,
   userData,
   triggerSystemFocus,
+  handleUpdateSettings,
   partnerTask,
   partnerInfo
 }: FocusViewProps) {
@@ -40,6 +43,7 @@ export default function FocusView({
   const [showChecklist, setShowChecklist] = useState(true);
   const [isMusicOpen, setIsMusicOpen] = useState(false);
   const [isMixerOpen, setIsMixerOpen] = useState(false);
+  const [isQuickNoteOpen, setIsQuickNoteOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showMusicPrompt, setShowMusicPrompt] = useState(true);
   const [hasInteractedWithMusic, setHasInteractedWithMusic] = useState(false);
@@ -144,7 +148,7 @@ export default function FocusView({
 
       <div className="relative z-20 flex items-center justify-between p-4 md:p-6 w-full max-w-5xl mx-auto">
         <div className="flex items-center gap-3">
-          <button onClick={() => triggerSystemFocus(userData?.shortcutName || 'Làm việc')} className="p-2.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 shadow-xl hover:bg-white/20 transition-colors group hidden sm:block">
+          <button onClick={() => triggerSystemFocus(userData?.shortcutName || 'Làm việc')} title="Kích hoạt Focus" className="p-2.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 shadow-xl hover:bg-white/20 transition-colors group hidden sm:block">
             <Zap className="w-6 h-6 text-yellow-400 fill-yellow-400 group-active:scale-95 transition-transform" />
           </button>
           <div>
@@ -156,7 +160,7 @@ export default function FocusView({
         {partnerTask && partnerInfo && (
           <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20">
             <div className="relative">
-              <img src={getAvatarUrl(partnerInfo.avatarConfig || (getAssigneeIdByEmail(partnerInfo.email) ? DEFAULT_AVATARS[getAssigneeIdByEmail(partnerInfo.email)!] : undefined) || {})} className="w-6 h-6 rounded-full border border-white/50" />
+              <img src={getAvatarUrl(partnerInfo.avatarConfig || (getAssigneeIdByEmail(partnerInfo.email) ? DEFAULT_AVATARS[getAssigneeIdByEmail(partnerInfo.email)!] : undefined) || {})} alt={partnerInfo.displayName} className="w-6 h-6 rounded-full border border-white/50" />
               <div className="absolute -bottom-0.5 -right-0.5"><Flame size={10} className="text-orange-500 animate-pulse" fill="currentColor"/></div>
             </div>
             <div className="flex flex-col">
@@ -167,17 +171,20 @@ export default function FocusView({
         )}
 
         <div className="flex items-center gap-2">
-          <button onClick={() => setIsSettingsOpen(!isSettingsOpen)} className={`p-2.5 sm:p-3 rounded-2xl backdrop-blur-md border border-white/10 transition-all active:scale-95 ${isSettingsOpen ? 'bg-white/20 text-white' : 'bg-white/10 text-white/50'}`}>
+          <button onClick={() => setIsSettingsOpen(!isSettingsOpen)} title="Cài đặt đồng hồ" className={`p-2.5 sm:p-3 rounded-2xl backdrop-blur-md border border-white/10 transition-all active:scale-95 ${isSettingsOpen ? 'bg-white/20 text-white' : 'bg-white/10 text-white/50'}`}>
             <Settings2 size={16} className="sm:w-[18px] sm:h-[18px]" />
           </button>
-          <button onClick={() => setIsMusicOpen(true)} className="p-2.5 sm:p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 text-white/70 hover:bg-white/20 hover:text-white transition-all active:scale-95 group hidden sm:block">
+          <button onClick={() => setIsMusicOpen(true)} title="Trình phát nhạc" className="p-2.5 sm:p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 text-white/70 hover:bg-white/20 hover:text-white transition-all active:scale-95 group hidden sm:block">
             <Music size={16} className={`sm:w-[18px] sm:h-[18px] ${isPlaying ? 'animate-pulse' : ''}`} />
           </button>
-          <button onClick={() => setIsMixerOpen(true)} className="p-2.5 sm:p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 text-white/70 hover:bg-white/20 hover:text-white transition-all active:scale-95 group">
+          <button onClick={() => setIsMixerOpen(true)} title="Danh sách nhạc" className="p-2.5 sm:p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 text-white/70 hover:bg-white/20 hover:text-white transition-all active:scale-95 group">
             <ListMusic size={16} className="sm:w-[18px] sm:h-[18px]" />
           </button>
-          <button onClick={() => setShowChecklist((v) => !v)} className={`p-2.5 sm:p-3 rounded-2xl backdrop-blur-md border border-white/10 transition-all active:scale-95 ${showChecklist ? 'bg-white/20 text-white' : 'bg-white/10 text-white/50'}`}>
+          <button onClick={() => setShowChecklist((v) => !v)} title="Bật/tắt Checklist" className={`p-2.5 sm:p-3 rounded-2xl backdrop-blur-md border border-white/10 transition-all active:scale-95 ${showChecklist ? 'bg-white/20 text-white' : 'bg-white/10 text-white/50'}`}>
             <ListTree size={16} className="sm:w-[18px] sm:h-[18px]" />
+          </button>
+          <button onClick={() => setIsQuickNoteOpen(true)} title="Ghi chú nhanh" className="p-2.5 sm:p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 text-white/70 hover:bg-white/20 hover:text-white transition-all active:scale-95 group">
+            <StickyNote size={16} className="sm:w-[18px] sm:h-[18px]" />
           </button>
         </div>
       </div>
@@ -237,10 +244,10 @@ export default function FocusView({
         />
 
         <div className="flex items-center gap-6 mb-8 shrink-0 relative z-20">
-          <button onClick={onPause} className={`p-5 rounded-full backdrop-blur-xl border transition-all active:scale-90 shadow-2xl ${isPaused ? 'bg-white text-slate-950 border-white shadow-white/20' : 'bg-white/10 text-white border-white/20 hover:bg-white/20'}`}>
+          <button onClick={onPause} title={isPaused ? "Bắt đầu" : "Tạm dừng"} className={`p-5 rounded-full backdrop-blur-xl border transition-all active:scale-90 shadow-2xl ${isPaused ? 'bg-white text-slate-950 border-white shadow-white/20' : 'bg-white/10 text-white border-white/20 hover:bg-white/20'}`}>
             {isPaused ? <Play size={24} fill="currentColor" /> : <Pause size={24} fill="currentColor" />}
           </button>
-          <button onClick={onComplete} className="p-6 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 text-white border border-emerald-400/50 hover:scale-105 hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] transition-all active:scale-90 shadow-xl">
+          <button onClick={onComplete} title="Hoàn thành task" className="p-6 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 text-white border border-emerald-400/50 hover:scale-105 hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] transition-all active:scale-90 shadow-xl">
             <CheckCircle2 size={32} strokeWidth={2.5} />
           </button>
         </div>
@@ -288,6 +295,13 @@ export default function FocusView({
         onAddViaUrl={() => {}}
         onDeleteTrack={handleDeleteTrack}
         uploadProgress={uploadProgress}
+      />
+
+      <QuickNoteSidebar
+        isOpen={isQuickNoteOpen}
+        onClose={() => setIsQuickNoteOpen(false)}
+        userData={userData}
+        onUpdateSettings={handleUpdateSettings}
       />
 
       {showMusicPrompt && !hasInteractedWithMusic && !isPlaying && tracks.length > 0 && (

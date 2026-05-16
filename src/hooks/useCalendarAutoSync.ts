@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { startOfDay, endOfDay, isSameDay } from 'date-fns';
+import { startOfDay, endOfDay, isSameDay, addDays } from 'date-fns';
 import { parseGCalEvent } from '../utils/calendarUtils';
 import { addTask } from '../services/taskService';
 import { ASSIGNEES } from '../utils/constants';
@@ -24,6 +24,7 @@ interface CalendarAutoSyncProps {
     calendarIdTun: string;
     appsScriptUrl: string;
   };
+  awardTaskRewards: (isLate: boolean) => Promise<void>;
 }
 
 /**
@@ -35,7 +36,8 @@ export const useCalendarAutoSync = ({
   userData,
   teamMembers,
   tasks,
-  config
+  config,
+  awardTaskRewards
 }: CalendarAutoSyncProps) => {
   const lastSyncRef = useRef<number>(0);
   const isLoadedRef = useRef<boolean>(false);
@@ -44,16 +46,25 @@ export const useCalendarAutoSync = ({
     if (!user) return;
     if (!userData.isLoaded) return;
 
+    // IMPORTANT: Respect the user's auto-sync setting
+    if (userData.autoSyncCalendar === false && !options?.force) {
+      console.log(`[AutoSync] Skipping (Sync is OFF in settings)`);
+      return;
+    }
+
     // Sync at most once every 15 minutes to avoid API spam
     const now = Date.now();
     if (!options?.force && now - lastSyncRef.current < 15 * 60 * 1000) return;
     lastSyncRef.current = now;
 
+    console.log(`[AutoSync] Triggering sync... Reason: ${options?.reason || 'periodic'}`);
+
     const { calendarApiKey, calendarIdTit, calendarIdTun, appsScriptUrl } = config;
     if (!appsScriptUrl && !calendarApiKey) return;
 
-    const tMin = startOfDay(new Date());
-    const tMax = endOfDay(new Date());
+    // Expand window: From 24 hours ago until 48 hours in the future
+    const tMin = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const tMax = endOfDay(addDays(new Date(), 2));
 
     const fetchViaAppsScript = async (calId: string, owner: string): Promise<CalendarEvent[]> => {
       if (!calId) return [];
@@ -109,6 +120,11 @@ export const useCalendarAutoSync = ({
       (e): e is CalendarEvent & { start: Date; end: Date } => Boolean(e.start && e.end && !e.isAllDay)
     );
 
+    console.log(`[AutoSync] Found ${allEvents.length} eligible events across calendars.`);
+
+    // Local set to avoid creating duplicates in the same loop
+    const newlyCreatedTitles = new Set<string>();
+
     for (const event of allEvents) {
       // Check if task already exists for this event
       const exists = tasks.some((t) => {
@@ -119,10 +135,11 @@ export const useCalendarAutoSync = ({
           Boolean(t.deadline) &&
           isSameDay(new Date(t.deadline as number), event.start)
         );
-      });
+      }) || newlyCreatedTitles.has(`${event.title}-${event.start.getTime()}`);
 
       if (!exists) {
         console.log(`[AutoSync] Creating automated task for event: ${event.title}`);
+        newlyCreatedTitles.add(`${event.title}-${event.start.getTime()}`);
         
         const assignee = teamMembers?.find(m => {
           if (!m?.email) return false;
@@ -132,6 +149,7 @@ export const useCalendarAutoSync = ({
         }) || null;
 
         const durationMins = Math.max(25, Math.round((event.end.getTime() - event.start.getTime()) / 60000));
+        const isPast = event.end.getTime() < now;
 
         const newTask = {
           title: event.title,
@@ -147,18 +165,25 @@ export const useCalendarAutoSync = ({
           priority: 'medium' as const,
           timerType: 'countdown',
           limitTime: durationMins,
-          isDone: false,
-          status: 'idle' as const,
-          totalTrackedTime: 0,
+          isDone: isPast,
+          status: isPast ? 'completed' as const : 'idle' as const,
+          totalTrackedTime: isPast ? durationMins * 60 * 1000 : 0,
+          endTime: isPast ? event.end.getTime() : undefined,
           createdAt: Date.now(),
           subTasks: [],
           isAutomated: true // CRITICAL: Mark as automated to skip heartbeat
         };
 
         await addTask(newTask);
+        
+        // If it's a past task, we "catch up" the rewards immediately
+        if (isPast) {
+          console.log(`[AutoSync] Awarding catch-up rewards for past task: ${event.title}`);
+          awardTaskRewards(false).catch(() => {});
+        }
       }
     }
-  }, [user, userData.isLoaded, tasks, teamMembers, config]);
+  }, [user, userData.isLoaded, userData.autoSyncCalendar, tasks, teamMembers, config, awardTaskRewards]);
 
   useEffect(() => {
     sync({ reason: 'interval_bootstrap' });
