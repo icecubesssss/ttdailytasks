@@ -34,3 +34,4 @@ service-account*.json
 .env
 #env.*.local    
 .firebase
+.ast-graph/

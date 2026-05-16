@@ -2,7 +2,7 @@ import React, { lazy, Suspense } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import TaskForm from '../tasks/TaskForm';
 import TaskBoard from '../tasks/TaskBoard.jsx';
-import TaskListView from '../tasks/TaskListView.jsx';
+import QuickNote from '../quicknote/QuickNote';
 import type { Task, UserData, TeamMember, LevelInfo } from '../../utils/helpers';
 import type { ShopItem } from '../../utils/constants';
 import type { User } from 'firebase/auth';
@@ -60,8 +60,6 @@ interface AppMainContentProps {
   partnerTask?: Task;
   myRunningTask?: Task;
   onCompleteDailyQuest: () => void;
-  toggleTaskStatus: (id: string, action: 'start' | 'pause' | 'complete') => Promise<void>;
-  handleDeleteTask: (id: string) => void;
 }
 
 interface LazyErrorBoundaryState {
@@ -127,12 +125,14 @@ function AppMainContent({
   partnerTask,
   myRunningTask,
   onCompleteDailyQuest,
-  toggleTaskStatus,
-  handleDeleteTask
 }: AppMainContentProps): React.ReactElement {
   return (
     <AnimatePresence mode="wait">
-      {activeTab === 'tasks' || activeTab === 'calendar' || activeTab === 'list' ? (
+      {activeTab === 'note' ? (
+        <div key="note">
+          <QuickNote userData={userData} onUpdateSettings={handleUpdateSettings} />
+        </div>
+      ) : activeTab === 'tasks' || activeTab === 'calendar' ? (
         <div key="main-tasks">
           <div className="animate-in slide-in-from-bottom-8">
             <TaskForm user={user} isDark={userData.isDarkMode} teamMembers={teamMembers} />
@@ -174,19 +174,7 @@ function AppMainContent({
             </LazyErrorBoundary>
           )}
 
-          {activeTab === 'list' && (
-            <TaskListView
-              tasks={filteredTasks}
-              user={user}
-              currentAssigneeId={currentAssigneeId}
-              isDark={userData.isDarkMode}
-              now={now}
-              onStart={(id: string) => toggleTaskStatus(id, 'start')}
-              onPause={(id: string) => toggleTaskStatus(id, 'pause')}
-              onComplete={(id: string) => toggleTaskStatus(id, 'complete')}
-              onDelete={handleDeleteTask}
-            />
-          )}
+
         </div>
       ) : (
         <div key={activeTab}>

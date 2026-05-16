@@ -1,17 +1,16 @@
 import React from 'react';
-import { Trash2, Lock, Users, Clock, Calendar, Pencil, CheckCircle2, Circle, X, BrainCircuit } from 'lucide-react';
+import { Trash2, Lock, Users, Clock, Pencil, CheckCircle2, Circle, X } from 'lucide-react';
 
 interface Task {
   id: string;
   title: string;
   priority?: string;
-  assigneeId?: string;
-  assigneePhoto?: string;
-  assigneeName?: string;
+  assigneeId?: string | null;
+  assigneePhoto?: string | null;
+  assigneeName?: string | null;
   status: string;
   type?: string;
   limitTime?: number;
-  // Add other fields as needed
 }
 
 interface SubTask {
@@ -21,7 +20,7 @@ interface SubTask {
 
 interface TaskTagsProps {
   task: Task;
-  isLocked: boolean;
+  isLocked: boolean | null | undefined;
   isDark: boolean;
   onPriorityChange: (id: string, priority: string) => void;
   onDelete: (id: string) => void;
@@ -32,8 +31,8 @@ export function TaskTags({ task, isLocked, isDark, onPriorityChange, onDelete }:
     <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
       <div className="flex gap-1.5 flex-wrap">
         <button
-          onClick={() => !isLocked && onPriorityChange(task.id, task.priority)}
-          disabled={isLocked}
+          onClick={() => !isLocked && onPriorityChange(task.id, task.priority ?? 'low')}
+          disabled={!!isLocked}
           className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest transition-all ${isLocked ? 'cursor-default' : 'hover:scale-110 active:scale-95 cursor-pointer'} ${task.priority === 'high' ? 'bg-red-500/20 text-red-500' : task.priority === 'medium' ? 'bg-amber-500/20 text-amber-600' : 'bg-slate-500/20 text-slate-500'}`}
         >
           {task.priority || 'vừa'}
@@ -51,7 +50,7 @@ export function TaskTags({ task, isLocked, isDark, onPriorityChange, onDelete }:
         )}
       </div>
       {!isLocked ? (
-        <button onClick={() => onDelete(task.id)} className="text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button>
+        <button onClick={() => onDelete(task.id)} aria-label="Xóa task" className="text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button>
       ) : (
         <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-500/10 text-slate-500 text-[8px] font-black uppercase tracking-widest">
           <Lock size={10} /> LOCK
@@ -64,7 +63,7 @@ export function TaskTags({ task, isLocked, isDark, onPriorityChange, onDelete }:
 export function TaskTitle({ task, isLocked, isCompleted, isDark, isEditing, editTitleRef, onStartEdit }: TaskTitleProps) {
   if (isEditing) return (
     <div className="mb-3">
-      <input autoFocus type="text" ref={editTitleRef} defaultValue={task.title} spellCheck="false" autoComplete="off"
+      <input autoFocus type="text" ref={editTitleRef} defaultValue={task.title} spellCheck="false" autoComplete="off" aria-label="Tiêu đề task"
         className={`w-full bg-indigo-500/10 border border-indigo-500/30 rounded-xl px-3 py-2 outline-none text-sm font-black ${isDark ? 'text-white' : 'text-slate-800'}`} />
     </div>
   );
@@ -82,18 +81,18 @@ export function TaskTitle({ task, isLocked, isCompleted, isDark, isEditing, edit
 
 interface TaskTitleProps {
   task: Task;
-  isLocked: boolean;
-  isCompleted: boolean;
+  isLocked: boolean | null | undefined;
+  isCompleted: boolean | null | undefined;
   isDark: boolean;
   isEditing: boolean;
-  editTitleRef: React.RefObject<HTMLInputElement>;
+  editTitleRef: React.RefObject<HTMLInputElement | null>;
   onStartEdit: () => void;
 }
 
 export function SubTaskItem({ sub, isLocked, isCompleted, isDark, isEditing, editSubTaskRef, onToggle, onRename, onDelete, onStartEdit }: SubTaskItemProps) {
   return (
     <div className="flex items-start gap-1.5 group/sub">
-      <button onClick={onToggle} disabled={isLocked || isCompleted}
+      <button onClick={onToggle} disabled={!!isLocked || !!isCompleted}
         className={`mt-0.5 transition-colors ${(isLocked || isCompleted) ? 'cursor-not-allowed opacity-50' : ''} ${sub.isDone ? 'text-emerald-500' : 'text-slate-300 hover:text-indigo-500'}`}>
         {sub.isDone ? <CheckCircle2 size={12} /> : <Circle size={12} />}
       </button>
@@ -111,7 +110,7 @@ export function SubTaskItem({ sub, isLocked, isCompleted, isDark, isEditing, edi
       )}
 
       {!isLocked && !isCompleted && (
-        <button onClick={onDelete} className="opacity-0 group-hover/sub:opacity-100 text-slate-300 hover:text-red-500"><X size={10} /></button>
+        <button onClick={onDelete} aria-label="Xóa việc nhỏ" className="opacity-0 group-hover/sub:opacity-100 text-slate-300 hover:text-red-500"><X size={10} /></button>
       )}
     </div>
   );
@@ -119,11 +118,11 @@ export function SubTaskItem({ sub, isLocked, isCompleted, isDark, isEditing, edi
 
 interface SubTaskItemProps {
   sub: SubTask;
-  isLocked: boolean;
-  isCompleted: boolean;
+  isLocked: boolean | null | undefined;
+  isCompleted: boolean | null | undefined;
   isDark: boolean;
   isEditing: boolean;
-  editSubTaskRef: React.RefObject<HTMLInputElement>;
+  editSubTaskRef: React.RefObject<HTMLInputElement | null>;
   onToggle: () => void;
   onRename: () => void;
   onDelete: () => void;
@@ -140,8 +139,8 @@ export function TimerSettingsPopover({ task, isDark, onUpdateTask, onClose }: Ti
     onUpdateTask(task.id, { type: newType, limitTime: newLimit });
   };
 
-  const handleUpdateLimit = (mins) => {
-    const ms = Math.max(1, parseInt(mins) || 1) * 60 * 1000;
+  const handleUpdateLimit = (mins: number) => {
+    const ms = Math.max(1, mins) * 60 * 1000;
     onUpdateTask(task.id, { limitTime: ms, type: 'countdown' });
   };
 
@@ -149,7 +148,7 @@ export function TimerSettingsPopover({ task, isDark, onUpdateTask, onClose }: Ti
     <div className={`absolute bottom-full left-0 mb-2 z-50 w-48 p-3 rounded-2xl border shadow-xl animate-in fade-in zoom-in-95 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
       <div className="flex items-center justify-between mb-2">
         <span className="text-[10px] font-black uppercase text-slate-500">Đồng hồ</span>
-        <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={12} /></button>
+        <button onClick={onClose} aria-label="Đóng" className="text-slate-400 hover:text-slate-600"><X size={12} /></button>
       </div>
       
       <div className="grid grid-cols-2 gap-1 mb-2">

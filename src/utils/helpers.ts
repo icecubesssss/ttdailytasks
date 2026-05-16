@@ -99,6 +99,15 @@ export interface UserData {
     isMuted: boolean;
   };
   hasRestoredStreak?: boolean;
+  quicknotes?: QuickNoteItem[];
+}
+
+export interface QuickNoteItem {
+  id: string;
+  content: string;
+  color: string;
+  createdAt: number;
+  rotation: number;
 }
 
 export interface TeamMember {

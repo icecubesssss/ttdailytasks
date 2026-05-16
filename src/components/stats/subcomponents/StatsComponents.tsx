@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layout, Calendar as CalendarIcon, ListTree, Sparkles, Zap, Rocket, Cpu } from 'lucide-react';
+import { Layout, Calendar as CalendarIcon, Sparkles, Zap, Rocket, Cpu } from 'lucide-react';
 import { getAvatarUrl, getAssigneeIdByEmail, TeamMember, UserData } from '../../../utils/helpers';
 import { DEFAULT_AVATARS, AI_MODELS } from '../../../utils/constants';
 
@@ -79,8 +79,7 @@ export function AppPreferences({ userData, isDark, onUpdateSettings, onTabChange
         <div className={`flex p-1 rounded-2xl gap-1 ${isDark ? 'bg-[#0e1e3d]/85 border border-[#233a63]' : 'bg-white border border-slate-200'}`}>
           {[
             { id: 'tasks', label: 'Board', icon: <Layout size={14} /> },
-            { id: 'calendar', label: 'Calendar', icon: <CalendarIcon size={14} /> },
-            { id: 'list', label: 'List', icon: <ListTree size={14} /> }
+            { id: 'calendar', label: 'Calendar', icon: <CalendarIcon size={14} /> }
           ].map(v => (
             <button key={v.id} onClick={() => { onUpdateSettings({ defaultView: v.id }); if (onTabChange) onTabChange(v.id); }}
               className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-[11px] font-black uppercase whitespace-nowrap transition-all ${userData.defaultView === v.id ? 'bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-[0_0_24px_rgba(99,102,241,0.55)]' : (isDark ? 'text-slate-400 hover:bg-[#1a2f57]/70' : 'text-slate-500 hover:bg-slate-100')}`}>

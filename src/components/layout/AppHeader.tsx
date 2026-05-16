@@ -6,7 +6,7 @@ import {
   ShoppingBag,
   Sparkles,
   LayoutDashboard,
-  ListTree,
+  StickyNote,
   Calendar as CalendarIcon,
   ChevronDown,
   CheckCircle2,
@@ -95,15 +95,15 @@ function AppHeader({
               title="Chế độ xem"
               aria-label="Đổi chế độ xem"
               className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-all duration-300 ${
-                userData.isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-200 shadow-sm'
+                ['tasks', 'calendar'].includes(activeTab)
+                  ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg'
+                  : userData.isDarkMode ? 'bg-slate-800/50 border-slate-700 text-slate-400' : 'bg-white border-slate-200 text-slate-500 shadow-sm'
               } ${isViewDropdownOpen ? 'ring-2 ring-indigo-500/50' : ''}`}
             >
               {activeTab === 'tasks' ? (
                 <Layout size={16} />
-              ) : activeTab === 'calendar' ? (
-                <CalendarIcon size={16} />
               ) : (
-                <ListTree size={16} />
+                <CalendarIcon size={16} />
               )}
               <ChevronDown
                 size={12}
@@ -115,7 +115,7 @@ function AppHeader({
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setIsViewDropdownOpen(false)}></div>
                 <div className="absolute top-full left-0 mt-2 w-48 p-2 rounded-2xl border shadow-2xl z-50 backdrop-blur-2xl bg-white/95 dark:bg-slate-900/95 dark:border-slate-700 animate-in fade-in slide-in-from-top-2 duration-200">
-                  {['tasks', 'calendar', 'list'].map((tab) => (
+                  {['tasks', 'calendar'].map((tab) => (
                     <button
                       key={tab}
                       onClick={() => {
@@ -128,7 +128,7 @@ function AppHeader({
                           : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300'
                       }`}
                     >
-                      {tab === 'tasks' ? 'Task Board' : tab === 'calendar' ? 'Calendar' : 'Simple List'}
+                      {tab === 'tasks' ? 'Task Board' : 'Calendar'}
                       {activeTab === tab && <CheckCircle2 size={14} />}
                     </button>
                   ))}
@@ -136,6 +136,21 @@ function AppHeader({
               </>
             )}
           </div>
+
+          <button
+            onClick={() => onTabChange('note')}
+            title="Quicknote"
+            aria-label="Mở Quicknote"
+            className={`p-2 rounded-xl border transition-all duration-300 hover:scale-110 active:scale-95 ${
+              activeTab === 'note'
+                ? 'bg-amber-400 text-white border-amber-300 shadow-lg'
+                : userData.isDarkMode
+                  ? 'bg-slate-800/50 border-slate-700 text-slate-400'
+                  : 'bg-white border-slate-200 text-slate-500 shadow-sm'
+            }`}
+          >
+            <StickyNote size={16} />
+          </button>
 
           {activeTab === 'calendar' && (
             <a href="https://calendar.google.com" target="_blank" rel="noopener"

@@ -1,0 +1,160 @@
+/* ── Color themes via data-color attribute ── */
+[data-color="amber"] { --note-bg: #fef9c3; --note-border: #fde047; --note-pin: #f59e0b; --note-line: #fef08a; }
+[data-color="rose"]  { --note-bg: #ffe4e6; --note-border: #fda4af; --note-pin: #f43f5e; --note-line: #fecdd3; }
+[data-color="mint"]  { --note-bg: #d1fae5; --note-border: #6ee7b7; --note-pin: #10b981; --note-line: #a7f3d0; }
+[data-color="sky"]   { --note-bg: #e0f2fe; --note-border: #7dd3fc; --note-pin: #0ea5e9; --note-line: #bae6fd; }
+[data-color="violet"]{ --note-bg: #ede9fe; --note-border: #c4b5fd; --note-pin: #8b5cf6; --note-line: #ddd6fe; }
+[data-color="peach"] { --note-bg: #ffedd5; --note-border: #fdba74; --note-pin: #f97316; --note-line: #fed7aa; }
+
+/* ── Card wrapper (rotation set via JS ref → no inline style) ── */
+.qn-wrapper {
+  position: relative;
+  flex-shrink: 0;
+  width: 14rem;
+  transform: rotate(var(--note-rotation, 0deg));
+  transform-origin: center top;
+}
+
+/* ── Tape strip ── */
+.qn-tape {
+  position: absolute;
+  top: -0.75rem;
+  left: 50%;
+  transform: translateX(-50%) rotate(-1deg);
+  width: 3.5rem;
+  height: 1.5rem;
+  border-radius: 2px;
+  background: var(--note-pin);
+  opacity: 0.6;
+  z-index: 10;
+}
+
+/* ── Card body ── */
+.qn-card {
+  position: relative;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: var(--note-bg);
+  border: 1.5px solid var(--note-border);
+  box-shadow: 2px 4px 18px rgba(0,0,0,0.13), 0 1px 3px rgba(0,0,0,0.08);
+  margin-top: 10px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.qn-card-pin { margin-top: 14px; }
+
+.qn-wrapper:hover .qn-card {
+  transform: translateY(-4px);
+  box-shadow: 2px 14px 36px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* ── Lined paper rows ── */
+.qn-line {
+  border-bottom: 1px solid var(--note-line);
+  height: 28px;
+}
+
+/* ── Color dot picker ── */
+.qn-lines-wrapper {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  padding-top: 40px;
+}
+
+.qn-dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 9999px;
+  transition: transform 0.15s ease;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+}
+.qn-dot:hover { transform: scale(1.25); }
+.qn-dot.active {
+  outline: 2px solid rgba(0,0,0,0.3);
+  outline-offset: 1px;
+  transform: scale(1.1);
+}
+.qn-dot[data-dot="amber"]  { background: #f59e0b; }
+.qn-dot[data-dot="rose"]   { background: #f43f5e; }
+.qn-dot[data-dot="mint"]   { background: #10b981; }
+.qn-dot[data-dot="sky"]    { background: #0ea5e9; }
+.qn-dot[data-dot="violet"] { background: #8b5cf6; }
+.qn-dot[data-dot="peach"]  { background: #f97316; }
+
+.qn-save-dim    { opacity: 0.4; }
+.qn-save-active { opacity: 1; }
+
+/* ── Save indicator ── */
+.qn-save { color: var(--note-pin); }
+
+/* ── Pin SVG elements (use CSS fill so no inline attr needed) ── */
+.qn-pin-head { fill: var(--note-pin); stroke: rgba(0,0,0,0.15); stroke-width: 1.5; }
+.qn-pin-shine { fill: rgba(255,255,255,0.45); }
+.qn-pin-needle { stroke: #6b7280; stroke-width: 1.8; stroke-linecap: round; }
+
+/* ── Textarea ── */
+.qn-textarea {
+  min-height: 168px;
+  font-family: 'Georgia', 'Noto Serif', serif;
+  line-height: 28px;
+  color: #1e293b;
+  background: transparent;
+  resize: none;
+  outline: none;
+  width: 100%;
+  padding: 0.25rem 0.75rem 1rem;
+  position: relative;
+  z-index: 10;
+}
+
+/* ── Corkboard ── */
+.qn-board {
+  position: relative;
+  min-height: 70vh;
+  border-radius: 1.5rem;
+  padding: 2rem 2rem 2.5rem;
+  padding-top: 2.5rem;
+  background: radial-gradient(ellipse at 30% 20%, #c8a97a 0%, #b8956a 40%, #a07850 100%);
+  box-shadow: inset 0 2px 20px rgba(0,0,0,0.2), 0 4px 24px rgba(0,0,0,0.15);
+}
+.qn-board-dark {
+  background: radial-gradient(ellipse at 30% 20%, #1e1a0e 0%, #12100a 100%);
+  box-shadow: inset 0 2px 20px rgba(0,0,0,0.5), 0 4px 24px rgba(0,0,0,0.3);
+}
+
+.qn-cork-texture {
+  position: absolute;
+  inset: 0;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0.2;
+  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0);
+  background-size: 12px 12px;
+}
+
+/* ── Add button ── */
+.qn-add-btn {
+  position: absolute;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  border-radius: 1rem;
+  font-weight: 900;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: #f59e0b;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(245,158,11,0.4);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.qn-add-btn:hover  { transform: scale(1.05); }
+.qn-add-btn:active { transform: scale(0.95); }
