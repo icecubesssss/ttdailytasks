@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Play, Pause, CheckCircle2, Clock, Calendar, Lock, BrainCircuit, ChevronDown } from 'lucide-react';
 import { formatDuration, getLegacyIdByEmail } from '../../utils/helpers';
 import type { Task } from '../../utils/helpers';
@@ -96,6 +96,26 @@ function TaskItem({
     setEditingSubTaskId(null);
   };
 
+  const subtasksToggleBtnRef1 = useRef<HTMLButtonElement>(null);
+  const subtasksToggleBtnRef2 = useRef<HTMLButtonElement>(null);
+  const progressBarRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const val = isSubTasksOpen ? 'true' : 'false';
+    if (subtasksToggleBtnRef1.current) {
+      subtasksToggleBtnRef1.current.setAttribute('aria-expanded', val);
+    }
+    if (subtasksToggleBtnRef2.current) {
+      subtasksToggleBtnRef2.current.setAttribute('aria-expanded', val);
+    }
+  }, [isSubTasksOpen]);
+
+  useEffect(() => {
+    if (progressBarRef.current) {
+      progressBarRef.current.style.width = `${subProgress}%`;
+    }
+  }, [subProgress]);
+
   return (
     <div
       className={`group relative p-4 rounded-3xl border transition-all hover:-translate-y-1 hover:shadow-2xl ${
@@ -145,8 +165,8 @@ function TaskItem({
       {/* ── Subtask progress bar ──────────────────────────── */}
       {hasSubTasks && (
         <button
+          ref={subtasksToggleBtnRef1}
           onClick={() => setIsSubTasksOpen((v) => !v)}
-          aria-expanded={isSubTasksOpen ? 'true' : 'false'}
           aria-label={isSubTasksOpen ? 'Thu gọn subtasks' : 'Mở rộng subtasks'}
           className={`w-full mt-3 group/sub-toggle flex items-center gap-2 rounded-xl px-2 py-1.5 transition-all ${
             isDark ? 'hover:bg-slate-700/50' : 'hover:bg-slate-100/70'
@@ -159,8 +179,8 @@ function TaskItem({
             }`}
           >
             <div
+              ref={progressBarRef}
               className="h-full rounded-full transition-all duration-500 bg-gradient-to-r from-indigo-500 to-emerald-500"
-              style={{ width: `${subProgress}%` }}
             />
           </div>
           <span
@@ -370,8 +390,8 @@ function TaskItem({
       {/* Nút mở subtask khi chưa có subtask nào (panel luôn ẩn ở trên) */}
       {!hasSubTasks && !isCompleted && !isLocked && (
         <button
+          ref={subtasksToggleBtnRef2}
           onClick={() => setIsSubTasksOpen((v) => !v)}
-          aria-expanded={isSubTasksOpen ? 'true' : 'false'}
           className={`mt-2 w-full text-[9px] font-bold uppercase tracking-widest py-1 rounded-lg transition-all ${
             isSubTasksOpen
               ? isDark ? 'text-slate-500 hover:text-slate-400' : 'text-slate-400 hover:text-slate-500'

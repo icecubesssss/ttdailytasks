@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useState, useCallback } from 'react';
+import React, { lazy, Suspense, useState, useCallback, useRef, useEffect } from 'react';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
 import { Plus, X } from 'lucide-react';
 import TaskForm from '../tasks/TaskForm';
@@ -114,7 +114,7 @@ function AppMainContent({
   handleUpdateSettings,
   levelInfo,
   handleBuyItem,
-  handleUseTicket,
+  handleUpdateSettings: onUpdateSettings, // mapping for convenience
   handleSummarize,
   isSummarizing,
   aiReport,
@@ -135,6 +135,18 @@ function AppMainContent({
   const handleFormClose = useCallback(() => setIsFormOpen(false), []);
 
   const isDark = userData.isDarkMode;
+  const toggleBtnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const el = toggleBtnRef.current;
+    if (!el) return;
+    el.setAttribute('aria-expanded', isFormOpen ? 'true' : 'false');
+    if (isFormOpen) {
+      el.setAttribute('aria-controls', 'task-form-panel');
+    } else {
+      el.removeAttribute('aria-controls');
+    }
+  }, [isFormOpen]);
 
   return (
     <AnimatePresence mode="wait">
@@ -150,9 +162,8 @@ function AppMainContent({
             {/* Toggle button — always visible */}
             <button
               id="btn-toggle-task-form"
+              ref={toggleBtnRef}
               onClick={() => setIsFormOpen((v) => !v)}
-              aria-expanded={isFormOpen ? 'true' : 'false'}
-              aria-controls={isFormOpen ? 'task-form-panel' : undefined}
               className={`group flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-sm transition-all duration-300 active:scale-95 ${
                 isFormOpen
                   ? isDark

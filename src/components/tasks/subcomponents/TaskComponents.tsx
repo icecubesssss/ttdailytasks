@@ -1,22 +1,6 @@
 import React from 'react';
 import { Trash2, Lock, Users, Clock, Pencil, CheckCircle2, Circle, X } from 'lucide-react';
-
-interface Task {
-  id: string;
-  title: string;
-  priority?: string;
-  assigneeId?: string | null;
-  assigneePhoto?: string | null;
-  assigneeName?: string | null;
-  status: string;
-  type?: string;
-  limitTime?: number;
-}
-
-interface SubTask {
-  title: string;
-  isDone: boolean;
-}
+import type { Task, SubTask } from '../../../utils/helpers';
 
 interface TaskTagsProps {
   task: Task;
