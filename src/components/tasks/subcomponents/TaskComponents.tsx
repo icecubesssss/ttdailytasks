@@ -44,10 +44,12 @@ export function TaskTags({ task, isLocked, isDark, onPriorityChange, onDelete }:
   );
 }
 
-export function TaskTitle({ task, isLocked, isCompleted, isDark, isEditing, editTitleRef, onStartEdit }: TaskTitleProps) {
+export function TaskTitle({ task, isLocked, isCompleted, isDark, isEditing, editTitleRef, onStartEdit, onCancelEdit }: TaskTitleProps) {
   if (isEditing) return (
     <div className="mb-3">
       <input autoFocus type="text" ref={editTitleRef} defaultValue={task.title} spellCheck="false" autoComplete="off" aria-label="Tiêu đề task"
+        onBlur={onCancelEdit}
+        onKeyDown={(e) => e.key === 'Enter' && onCancelEdit()}
         className={`w-full bg-indigo-500/10 border border-indigo-500/30 rounded-xl px-3 py-2 outline-none text-sm font-black ${isDark ? 'text-white' : 'text-slate-800'}`} />
     </div>
   );
@@ -71,6 +73,7 @@ interface TaskTitleProps {
   isEditing: boolean;
   editTitleRef: React.RefObject<HTMLInputElement | null>;
   onStartEdit: () => void;
+  onCancelEdit: () => void;
 }
 
 export function SubTaskItem({ sub, isLocked, isCompleted, isDark, isEditing, editSubTaskRef, onToggle, onRename, onDelete, onStartEdit }: SubTaskItemProps) {
@@ -83,7 +86,7 @@ export function SubTaskItem({ sub, isLocked, isCompleted, isDark, isEditing, edi
 
       {isEditing ? (
         <input autoFocus type="text" ref={editSubTaskRef} defaultValue={sub.title} onBlur={onRename}
-          onKeyDown={(e) => e.key === 'Enter' && onRename()} spellCheck="false" autoComplete="off"
+          onKeyDown={(e) => e.key === 'Enter' && onRename()} spellCheck="false" autoComplete="off" aria-label="Tiêu đề việc nhỏ"
           className={`flex-1 bg-indigo-500/10 border border-indigo-500/20 rounded px-2 py-0.5 outline-none text-[10px] ${isDark ? 'text-white' : 'text-slate-800'}`} />
       ) : (
         <span onClick={() => !isLocked && !isCompleted && onStartEdit()}

@@ -114,7 +114,7 @@ function AppMainContent({
   handleUpdateSettings,
   levelInfo,
   handleBuyItem,
-  handleUpdateSettings: onUpdateSettings, // mapping for convenience
+  handleUseTicket,
   handleSummarize,
   isSummarizing,
   aiReport,
