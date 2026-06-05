@@ -18,7 +18,7 @@ export const generateTaskSummary = async (tasks: Task[], userData: UserData): Pr
   const prompt = `Đây là danh sách công việc của Team Tít & Tún (tối đa 20 việc gần nhất):\n${dataStr}\n\nTổng: ${tasks.length} việc, Xong: ${tasks.filter(t => t.status === 'completed').length}, Đang chạy: ${tasks.filter(t => t.status === 'running').length}\nTít: ${titDone}/${titTasks.length} xong. Tún: ${tunDone}/${tunTasks.length} xong.\n\nHãy viết 1 đoạn văn (4-5 câu) bằng tiếng Việt đánh giá tiến độ. Nếu ở chế độ 'cà khịa', hãy châm chọc sự lười biếng hoặc khen ngợi một cách đầy muối. Gọi tên Tít và Tún trực tiếp.`;
 
   return await callGemini(prompt, systemPrompt, 0, {
-    model: userData.aiMode, // Wait, in the JS it was userData.aiModel. Let me check UserData.
+    model: userData.aiModel || 'google/gemma-4-31b-it:free',
     maxPromptChars: 2200,
     maxSystemChars: 700,
     useCache: true,

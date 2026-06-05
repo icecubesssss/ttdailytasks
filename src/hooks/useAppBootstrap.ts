@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, isDummyConfig } from '../firebase';
 import * as taskService from '../services/taskService';
@@ -13,6 +13,7 @@ interface UseAppBootstrapReturn {
   user: User | null;
   authError: string | null;
   isLoading: boolean;
+  isTasksLoaded: boolean;
 }
 
 interface LocalUser {
@@ -37,6 +38,8 @@ export const useAppBootstrap = ({ setTasks }: UseAppBootstrapProps): UseAppBoots
     isDummyConfig ? "Chỉ chạy cục bộ do lỗi API Key." : null
   ));
   const [isLoading, setIsLoading] = useState(!isDummyConfig);
+  const [isTasksLoaded, setIsTasksLoaded] = useState(false);
+  const isTasksLoadedRef = useRef(false);
 
   useEffect(() => {
     if (isDummyConfig) return;
@@ -67,7 +70,14 @@ export const useAppBootstrap = ({ setTasks }: UseAppBootstrapProps): UseAppBoots
 
   useEffect(() => {
     if (!isFirebaseUser(user)) return;
-    const unsubscribe = taskService.subscribeToTasks(setTasks, (error) => {
+    const unsubscribe = taskService.subscribeToTasks((tasks) => {
+      setTasks(tasks);
+      // Mark tasks as loaded after first snapshot (even if empty)
+      if (!isTasksLoadedRef.current) {
+        isTasksLoadedRef.current = true;
+        setIsTasksLoaded(true);
+      }
+    }, (error) => {
       setAuthError("Firestore Read Error: " + error.message);
     });
     return () => { if (unsubscribe) unsubscribe(); };
@@ -76,6 +86,7 @@ export const useAppBootstrap = ({ setTasks }: UseAppBootstrapProps): UseAppBoots
   return {
     user: isFirebaseUser(user) ? user : null,
     authError,
-    isLoading
+    isLoading,
+    isTasksLoaded
   };
 };

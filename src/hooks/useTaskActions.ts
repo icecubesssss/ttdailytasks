@@ -94,7 +94,7 @@ export const useTaskActions = ({
         if (task.status === 'running') {
           newTotal += currentTime - (task.lastStartTime || 0);
         } else if (newTotal === 0 && task.limitTime && task.limitTime > 0) {
-          newTotal = task.limitTime * 60 * 1000;
+          newTotal = task.limitTime;
         }
 
         const isAutoScheduleComplete = options?.completionSource === 'auto_schedule';
@@ -262,7 +262,7 @@ export const useTaskActions = ({
       setAiLoading(true);
       try {
         const steps = await aiService.suggestSubTasks(title, {
-          model: userData.aiMode
+          model: userData.aiModel || 'google/gemma-4-31b-it:free'
         });
         if (Array.isArray(steps)) {
           for (const step of steps) await handleSubTaskAction(taskId, null, 'add', step);
@@ -279,7 +279,7 @@ export const useTaskActions = ({
         setAiLoading(false);
       }
     },
-    [handleSubTaskAction, userData.aiMode]
+    [handleSubTaskAction, userData.aiModel]
   );
 
   const handleUpdateTask = useCallback(

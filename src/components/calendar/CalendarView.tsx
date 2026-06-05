@@ -180,11 +180,10 @@ export default function CalendarView({
     if (!event.start || !event.end) return;
     try {
       const durationMins = Math.max(25, Math.round((event.end.getTime() - event.start.getTime()) / 60000));
+      const durationMs = durationMins * 60 * 1000;
       const assignee = teamMembers?.find(m => {
         if (!m?.email) return false;
-        const legacyId = (m.email.toLowerCase() === 'dinhthai.ctv@gmail.com') ? 'tit' : 
-                         (m.email.toLowerCase() === 'transontruc.03@gmail.com') ? 'tun' : null;
-        return legacyId === event.owner;
+        return getLegacyIdByEmail(m.email) === event.owner;
       });
 
       const newTask: any = {
@@ -197,9 +196,10 @@ export default function CalendarView({
         deadline: event.end.getTime(),
         scheduledStartTime: event.start.getTime(),
         scheduledEndTime: event.end.getTime(),
+        calendarEventId: event.id,
         priority: 'medium',
-        timerType: 'countdown',
-        limitTime: durationMins,
+        type: 'countdown',
+        limitTime: durationMs,
         isDone: false,
         status: 'idle',
         totalTrackedTime: 0,

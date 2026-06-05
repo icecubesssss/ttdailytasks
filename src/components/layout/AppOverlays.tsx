@@ -1,9 +1,10 @@
 import React from 'react';
 import { AnimatePresence } from 'framer-motion';
 import FocusView from '../focus/FocusView';
-import ClosetView from '../shop/ClosetView.jsx';
+import ClosetView from '../shop/ClosetView';
 import DuoFocusBanner from '../focus/DuoFocusBanner';
-import Modal from '../../shared/Modal.jsx';
+import Modal from '../../shared/Modal';
+import MascotChatbotWidget from '../mascot/MascotChatbotWidget';
 import type { Task, UserData, LevelInfo, TeamMember, AvatarConfig } from '../../utils/helpers';
 
 type PartnerInfo = TeamMember | { displayName: string; email: string; avatarConfig?: AvatarConfig | null };
@@ -106,6 +107,11 @@ function AppOverlays({
           />
         )}
       </AnimatePresence>
+
+      <MascotChatbotWidget
+        userData={userData}
+        tasks={tasks}
+      />
     </>
   );
 }

@@ -1,10 +1,10 @@
-import React, { lazy, Suspense } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import React, { lazy, Suspense, useState, useCallback } from 'react';
+import { AnimatePresence, motion as Motion } from 'framer-motion';
+import { Plus, X } from 'lucide-react';
 import TaskForm from '../tasks/TaskForm';
-import TaskBoard from '../tasks/TaskBoard.jsx';
+import TaskBoard from '../tasks/TaskBoard';
 import QuickNote from '../quicknote/QuickNote';
 import type { Task, UserData, TeamMember, LevelInfo } from '../../utils/helpers';
-import type { ShopItem } from '../../utils/constants';
 import type { User } from 'firebase/auth';
 
 const CalendarView = lazy(() => import('../calendar/CalendarView'));
@@ -60,6 +60,8 @@ interface AppMainContentProps {
   partnerTask?: Task;
   myRunningTask?: Task;
   onCompleteDailyQuest: () => void;
+  toggleTaskStatus: (id: string, action: 'start' | 'pause' | 'complete') => Promise<void>;
+  handleDeleteTask: (id: string) => Promise<void>;
 }
 
 interface LazyErrorBoundaryState {
@@ -126,6 +128,14 @@ function AppMainContent({
   myRunningTask,
   onCompleteDailyQuest,
 }: AppMainContentProps): React.ReactElement {
+  // TaskForm collapse — closed by default, open on demand
+  const [isFormOpen, setIsFormOpen] = useState(false);
+
+  const handleFormOpen = useCallback(() => setIsFormOpen(true), []);
+  const handleFormClose = useCallback(() => setIsFormOpen(false), []);
+
+  const isDark = userData.isDarkMode;
+
   return (
     <AnimatePresence mode="wait">
       {activeTab === 'note' ? (
@@ -134,21 +144,72 @@ function AppMainContent({
         </div>
       ) : activeTab === 'tasks' || activeTab === 'calendar' ? (
         <div key="main-tasks">
-          <div className="animate-in slide-in-from-bottom-8">
-            <TaskForm user={user} isDark={userData.isDarkMode} teamMembers={teamMembers} />
+
+          {/* ── Collapsible Task Form ───────────────────────── */}
+          <div className="mb-6">
+            {/* Toggle button — always visible */}
+            <button
+              id="btn-toggle-task-form"
+              onClick={() => setIsFormOpen((v) => !v)}
+              aria-expanded={isFormOpen}
+              aria-controls="task-form-panel"
+              className={`group flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-sm transition-all duration-300 active:scale-95 ${
+                isFormOpen
+                  ? isDark
+                    ? 'bg-slate-700/60 text-slate-300 border border-slate-600 hover:bg-slate-700'
+                    : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'
+                  : 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 hover:shadow-indigo-500/50'
+              }`}
+            >
+              {isFormOpen ? (
+                <>
+                  <X size={16} className="transition-transform group-hover:rotate-90 duration-200" />
+                  Đóng form
+                </>
+              ) : (
+                <>
+                  <Plus size={16} className="transition-transform group-hover:rotate-90 duration-200" />
+                  Tạo task mới
+                </>
+              )}
+            </button>
+
+            {/* Animated form panel */}
+            <AnimatePresence>
+              {isFormOpen && (
+                <Motion.div
+                  id="task-form-panel"
+                  key="task-form"
+                  initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                  animate={{ opacity: 1, height: 'auto', marginTop: 12 }}
+                  exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                  transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                  style={{ overflow: 'hidden' }}
+                >
+                  <TaskForm
+                    user={user}
+                    isDark={isDark}
+                    teamMembers={teamMembers}
+                    onAfterSubmit={handleFormClose}
+                  />
+                </Motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
+          {/* ── Task Board ──────────────────────────────────── */}
           {activeTab === 'tasks' && (
             <TaskBoard
               tasks={filteredTasks}
               user={user}
               currentAssigneeId={currentAssigneeId}
-              isDark={userData.isDarkMode}
+              isDark={isDark}
               now={now}
               aiLoading={aiLoading}
             />
           )}
 
+          {/* ── Calendar ────────────────────────────────────── */}
           {activeTab === 'calendar' && (
             <LazyErrorBoundary>
               <Suspense
@@ -157,7 +218,7 @@ function AppMainContent({
                 }
               >
                 <CalendarViewTyped
-                  isDark={userData.isDarkMode}
+                  isDark={isDark}
                   calendarApiKey={calendarApiKey}
                   calendarIdTit={calendarIdTit}
                   calendarIdTun={calendarIdTun}
@@ -173,8 +234,6 @@ function AppMainContent({
               </Suspense>
             </LazyErrorBoundary>
           )}
-
-
         </div>
       ) : (
         <div key={activeTab}>
@@ -187,7 +246,7 @@ function AppMainContent({
               <Dashboard
                 view={activeTab}
                 tasks={tasks}
-                isDark={userData.isDarkMode}
+                isDark={isDark}
                 teamMembers={teamMembers}
                 userData={userData}
                 levelInfo={levelInfo}

@@ -4,6 +4,7 @@
 var APP  = "https://tt-daily-task.web.app/";
 var BASE = "https://firestore.googleapis.com/v1/projects/tt-daily-task/databases/(default)/documents/";
 var AID  = "tt-daily-task";
+var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxYIP70rPBMD82EdKXOLFAf-ufCZ6iptvpgv9ODHOalM7J6FO-SZgWpoE_f5qygpWuH/exec";
 
 var USERS = {
   "tit": { uid: "XR4Z15wXvrgoY68XKPcEzDfhbBz1", shortName: "TIT", color: "#60a5fa" },
@@ -15,12 +16,17 @@ var ME = USERS[param] || USERS["tit"];
 
 // --- Helpers (sync) ---
 function fv(doc, field, type) {
+  if (doc && doc[field] !== undefined && doc[field] !== null) {
+    if (type === "integerValue" || type === "doubleValue") return String(doc[field]);
+    if (type === "booleanValue") return Boolean(doc[field]);
+    return doc[field];
+  }
   if (!doc || !doc.fields || !doc.fields[field]) return null;
   return doc.fields[field][type] || null;
 }
 
 function getStreak(doc) {
-  if (!doc || !doc.fields) return 0;
+  if (!doc) return 0;
   // streak can be integerValue or doubleValue depending on how Firebase stored it
   var sv = fv(doc, "streak", "integerValue") || fv(doc, "streak", "doubleValue");
   return sv ? parseInt(sv) : 0;
@@ -37,22 +43,31 @@ function getTheme() {
 function findRunningTask(docs, uid) {
   for (var i = 0; i < docs.length; i++) {
     var t = docs[i];
+    var currentWorker = fv(t, "currentWorker", "stringValue");
     if (fv(t, "status", "stringValue") === "running" &&
-        fv(t, "currentWorker", "stringValue") === uid) {
-      return { id: t.name.split("/").pop(), title: fv(t, "title", "stringValue") || "Dang lam..." };
+        currentWorker === uid) {
+      return { id: getDocId(t), title: fv(t, "title", "stringValue") || "Dang lam..." };
     }
   }
   return null;
 }
 
-function findNextTask(docs) {
+function findNextTask(docs, uid, legacyId) {
   for (var i = 0; i < docs.length; i++) {
     var t = docs[i];
-    if (fv(t, "status", "stringValue") === "idle") {
-      return { id: t.name.split("/").pop(), title: fv(t, "title", "stringValue") || "Task moi" };
+    var assigneeId = fv(t, "assigneeId", "stringValue");
+    if (fv(t, "status", "stringValue") === "idle" &&
+        (!assigneeId || assigneeId === uid || assigneeId === legacyId)) {
+      return { id: getDocId(t), title: fv(t, "title", "stringValue") || "Task moi" };
     }
   }
   return null;
+}
+
+function getDocId(doc) {
+  if (doc && doc.id) return doc.id;
+  if (doc && doc.name) return doc.name.split("/").pop();
+  return "";
 }
 
 // --- UI Builder (sync) ---
@@ -183,22 +198,37 @@ async function run() {
   var statsDoc = null;
   var taskDocs = [];
 
+  if (APPS_SCRIPT_URL) {
+    try {
+      var proxy = new Request(APPS_SCRIPT_URL + "?mode=widget&user=" + encodeURIComponent(param));
+      var data = await proxy.loadJSON();
+      if (data && !data.error) {
+        statsDoc = data.stats || null;
+        taskDocs = data.tasks || [];
+      }
+    } catch(e) {}
+  }
+
   try {
-    // Read from public mirror — written by app whenever stats change (no auth needed)
-    var r1 = new Request(BASE + "artifacts/" + AID + "/public/data/widget_stats/" + ME.uid);
-    var s = await r1.loadJSON();
-    if (s && !s.error) statsDoc = s;
+    if (!statsDoc) {
+      // Fallback for projects whose Firestore rules allow unauthenticated public reads.
+      var r1 = new Request(BASE + "artifacts/" + AID + "/public/data/widget_stats/" + ME.uid);
+      var s = await r1.loadJSON();
+      if (s && !s.error) statsDoc = s;
+    }
   } catch(e) {}
 
   try {
-    var r2 = new Request(BASE + "artifacts/" + AID + "/public/data/tasks");
-    var raw = await r2.loadJSON();
-    if (raw && raw.documents) taskDocs = raw.documents;
+    if (!taskDocs.length) {
+      var r2 = new Request(BASE + "artifacts/" + AID + "/public/data/tasks");
+      var raw = await r2.loadJSON();
+      if (raw && raw.documents) taskDocs = raw.documents;
+    }
   } catch(e) {}
 
   var streak = getStreak(statsDoc);
   var running = findRunningTask(taskDocs, ME.uid);
-  var next = running ? null : findNextTask(taskDocs);
+  var next = running ? null : findNextTask(taskDocs, ME.uid, param);
 
   buildWidget(streak, running, next);
 }

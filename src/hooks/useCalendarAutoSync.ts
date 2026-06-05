@@ -3,7 +3,7 @@ import { startOfDay, endOfDay, isSameDay, addDays } from 'date-fns';
 import { parseGCalEvent } from '../utils/calendarUtils';
 import { addTask } from '../services/taskService';
 import { ASSIGNEES } from '../utils/constants';
-import { CalendarEvent } from '../utils/helpers';
+import { CalendarEvent, getLegacyIdByEmail } from '../utils/helpers';
 
 type OwnerKey = keyof typeof ASSIGNEES;
 const isOwnerKey = (value: unknown): value is OwnerKey =>
@@ -18,6 +18,8 @@ interface CalendarAutoSyncProps {
   };
   teamMembers: any[];
   tasks: any[];
+  isTasksLoaded: boolean;
+  isTeamMembersLoaded: boolean;
   config: {
     calendarApiKey: string;
     calendarIdTit: string;
@@ -36,6 +38,8 @@ export const useCalendarAutoSync = ({
   userData,
   teamMembers,
   tasks,
+  isTasksLoaded,
+  isTeamMembersLoaded,
   config,
   awardTaskRewards
 }: CalendarAutoSyncProps) => {
@@ -45,6 +49,12 @@ export const useCalendarAutoSync = ({
   const sync = useCallback(async (options?: { force?: boolean; reason?: string }) => {
     if (!user) return;
     if (!userData.isLoaded) return;
+    // CRITICAL: Wait until both tasks and team members have loaded from Firestore
+    // to avoid creating duplicate tasks against an empty task list on startup.
+    if (!isTasksLoaded || !isTeamMembersLoaded) {
+      console.log(`[AutoSync] Skipping - waiting for data to load (tasks:${isTasksLoaded}, team:${isTeamMembersLoaded})`);
+      return;
+    }
 
     // IMPORTANT: Respect the user's auto-sync setting
     if (userData.autoSyncCalendar === false && !options?.force) {
@@ -143,12 +153,11 @@ export const useCalendarAutoSync = ({
         
         const assignee = teamMembers?.find(m => {
           if (!m?.email) return false;
-          const legacyId = (m.email.toLowerCase() === 'dinhthai.ctv@gmail.com') ? 'tit' : 
-                           (m.email.toLowerCase() === 'transontruc.03@gmail.com') ? 'tun' : null;
-          return legacyId === event.owner;
+          return getLegacyIdByEmail(m.email) === event.owner;
         }) || null;
 
         const durationMins = Math.max(25, Math.round((event.end.getTime() - event.start.getTime()) / 60000));
+        const durationMs = durationMins * 60 * 1000;
         const isPast = event.end.getTime() < now;
 
         const newTask = {
@@ -163,11 +172,11 @@ export const useCalendarAutoSync = ({
           scheduledEndTime: event.end.getTime(),
           calendarEventId: event.id,
           priority: 'medium' as const,
-          timerType: 'countdown',
-          limitTime: durationMins,
+          type: 'countdown' as const,
+          limitTime: durationMs,
           isDone: isPast,
           status: isPast ? 'completed' as const : 'idle' as const,
-          totalTrackedTime: isPast ? durationMins * 60 * 1000 : 0,
+          totalTrackedTime: isPast ? durationMs : 0,
           endTime: isPast ? event.end.getTime() : undefined,
           createdAt: Date.now(),
           subTasks: [],
@@ -183,7 +192,7 @@ export const useCalendarAutoSync = ({
         }
       }
     }
-  }, [user, userData.isLoaded, userData.autoSyncCalendar, tasks, teamMembers, config, awardTaskRewards]);
+  }, [user, userData.isLoaded, userData.autoSyncCalendar, isTasksLoaded, isTeamMembersLoaded, tasks, teamMembers, config, awardTaskRewards]);
 
   useEffect(() => {
     sync({ reason: 'interval_bootstrap' });
@@ -192,12 +201,13 @@ export const useCalendarAutoSync = ({
   }, [sync]);
 
   useEffect(() => {
-    if (userData.isLoaded && !isLoadedRef.current) {
+    // Only fire startup sync when ALL data sources are confirmed loaded
+    if (userData.isLoaded && isTasksLoaded && isTeamMembersLoaded && !isLoadedRef.current) {
       isLoadedRef.current = true;
-      lastSyncRef.current = 0;
-      sync({ force: true, reason: 'user_data_loaded' });
+      lastSyncRef.current = 0; // Reset throttle so startup sync fires immediately
+      sync({ force: true, reason: 'all_data_loaded' });
     }
-  }, [userData.isLoaded, sync]);
+  }, [userData.isLoaded, isTasksLoaded, isTeamMembersLoaded, sync]);
 
   return { triggerSync: sync };
 };

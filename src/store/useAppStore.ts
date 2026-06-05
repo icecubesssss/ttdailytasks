@@ -13,6 +13,7 @@ export const DEFAULT_USER_DATA: UserData = {
   ownedItemIds: [],
   activeBooster: null,
   aiMode: 'cute',
+  aiModel: 'google/gemma-4-31b-it:free',
   ttGold: 0,
   ticketHistory: [],
   avatarConfig: null,

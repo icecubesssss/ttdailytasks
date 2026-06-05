@@ -1,13 +1,4 @@
-import React, { useState } from 'react';
-import { 
-  Layout, 
-  ShoppingBag, 
-  LayoutDashboard, 
-  ListTree, 
-  Calendar as CalendarIcon, 
-  ChevronDown, 
-  CheckCircle2 
-} from 'lucide-react';
+import React from 'react';
 import { getAssigneeIdByEmail } from './utils/helpers';
 import { useTTApp } from './hooks/useTTApp';
 
@@ -17,6 +8,7 @@ import SplashScreen from './components/auth/SplashScreen';
 import AppHeader from './components/layout/AppHeader';
 import AppMainContent from './components/layout/AppMainContent';
 import AppOverlays from './components/layout/AppOverlays';
+import AppNavigation from './components/layout/AppNavigation';
 import { AppProviders } from './components/layout/AppProviders';
 
 export default function App(): React.ReactElement {
@@ -41,7 +33,9 @@ export default function App(): React.ReactElement {
 
   return (
     <AppProviders taskActions={app.taskActions}>
-      <div className={`min-h-screen transition-all duration-700 font-outfit mesh-bg ${app.userData.activeThemeId || ''} ${app.userData.isDarkMode ? 'dark text-slate-100' : 'text-slate-900'} pb-32`}>
+      <div
+        className={`min-h-screen transition-all duration-700 font-outfit mesh-bg ${app.userData.activeThemeId || ''} ${app.userData.isDarkMode ? 'dark text-slate-100' : 'text-slate-900'} pb-32`}
+      >
         <div className="max-w-4xl mx-auto px-4 pt-8 md:pt-16">
           <AppHeader
             user={app.user}
@@ -91,8 +85,6 @@ export default function App(): React.ReactElement {
             handleDeleteTask={app.taskActions.handleDeleteTask}
           />
 
-
-
           <AppOverlays
             isClosetOpen={app.isClosetOpen}
             setIsClosetOpen={app.setIsClosetOpen}
@@ -114,6 +106,14 @@ export default function App(): React.ReactElement {
             now={app.now}
           />
         </div>
+
+        {/* ── Floating Bottom Dock ─────────────────────────── */}
+        <AppNavigation
+          activeTab={app.activeTab}
+          isDark={app.userData.isDarkMode}
+          onTabChange={app.handleTabChange}
+          showCalendarLink={app.activeTab === 'calendar'}
+        />
       </div>
     </AppProviders>
   );

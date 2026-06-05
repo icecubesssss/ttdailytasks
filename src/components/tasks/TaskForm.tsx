@@ -10,9 +10,10 @@ interface TaskFormProps {
   isDark: boolean;
   teamMembers?: TeamMember[];
   onLocalAdd?: (task: Task) => void;
+  onAfterSubmit?: () => void;
 }
 
-const TaskForm = ({ user, isDark, teamMembers = [], onLocalAdd }: TaskFormProps): React.ReactElement => {
+const TaskForm = ({ user, isDark, teamMembers = [], onLocalAdd, onAfterSubmit }: TaskFormProps): React.ReactElement => {
   const [priority, setPriority] = useState<Task['priority']>('medium');
   const [timerType, setTimerType] = useState<NonNullable<Task['type']>>('stopwatch');
   const [countdownMinutes, setCountdownMinutes] = useState(25);
@@ -92,6 +93,7 @@ const TaskForm = ({ user, isDark, teamMembers = [], onLocalAdd }: TaskFormProps)
           setAssigneeId(user?.uid || '');
           setDeadline('');
           setTempSubTasks([]);
+          onAfterSubmit?.();
         } catch(err) {
           const message = err instanceof Error ? err.message : String(err);
           console.error("Add task error:", err);

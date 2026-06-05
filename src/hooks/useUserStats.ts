@@ -35,7 +35,9 @@ export function useUserStats(user: User | null) {
   const setUserData = useAppStore((state) => state.setUserData);
   const patchUserData = useAppStore((state) => state.patchUserData);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [isTeamMembersLoaded, setIsTeamMembersLoaded] = useState(false);
   const alertedLevelRef = useRef<number>(0);
+  const isTeamMembersLoadedRef = useRef(false);
 
   // 1. Sync User Stats
   useEffect(() => {
@@ -56,6 +58,8 @@ export function useUserStats(user: User | null) {
         if (data.checkInHistory === undefined) { updates.checkInHistory = {}; needsUpdate = true; }
         if (data.mascotName === undefined) { updates.mascotName = 'Mochi'; needsUpdate = true; }
         if (data.mascotAvatar === undefined) { updates.mascotAvatar = '🤖'; needsUpdate = true; }
+        // Ensure aiModel is always set to a valid model ID (not the personality aiMode)
+        if (!data.aiModel) { updates.aiModel = 'google/gemma-4-31b-it:free'; needsUpdate = true; }
 
         // Auto-gift existing themes
         const currentOwned = data.ownedItemIds || [];
@@ -125,29 +129,34 @@ export function useUserStats(user: User | null) {
     if (!user || user.uid === "local-user-test") return;
     const un = userService.subscribeToTeamMembers((members, isFromServer) => {
       setTeamMembers(members);
+      // Mark team members as loaded after first snapshot
+      if (!isTeamMembersLoadedRef.current) {
+        isTeamMembersLoadedRef.current = true;
+        setIsTeamMembersLoaded(true);
+      }
       
       const currentMember = members.find(m => m.uid === user.uid);
       if (currentMember) {
-        const isTit = user.email?.toLowerCase().includes('dinhthai');
-        const correctFreezes = isTit
-          ? Math.max(currentMember.streakFreezes || 0, 3)
-          : (currentMember.streakFreezes || 0);
-
-        // Patch Zustand store so Header is correct
-        patchUserData({
-          streak: currentMember.streak,
-          xp: currentMember.xp,
-          level: currentMember.level,
-          ttGold: currentMember.ttGold,
-          streakFreezes: correctFreezes,
-          lastCheckIn: currentMember.lastCheckIn,
-          isFromServer // Only trust server data
-        });
-
-        // If Firestore has wrong freeze count, fix it so Stats card also shows correct value
-        if (correctFreezes !== (currentMember.streakFreezes || 0)) {
-          userService.updateTeamMemberActive(user.uid, { streakFreezes: correctFreezes }).catch(ignoreAsyncError);
-          userService.updateUserStats(user.uid, { streakFreezes: correctFreezes }).catch(ignoreAsyncError);
+        // SINGLE SOURCE OF TRUTH: the per-user `profile/stats` doc (subscribeToUserStats)
+        // is authoritative for gamification stats. The public `team_members` doc is only a
+        // mirror for the team leaderboard. Previously this subscription overwrote
+        // streak/streakFreezes from the (possibly stale) mirror, and the 20s heartbeat then
+        // pushed that stale value back to the server — which could silently zero out a user's
+        // streak freezes and reset their streak on the next reward transaction.
+        //
+        // Fix: only fall back to the mirror BEFORE fresh server stats have arrived. Once the
+        // authoritative stats doc has loaded from the server, never let the mirror clobber it.
+        const statsAreAuthoritative = useAppStore.getState().userData.isFromServer === true;
+        if (!statsAreAuthoritative) {
+          patchUserData({
+            streak: currentMember.streak,
+            xp: currentMember.xp,
+            level: currentMember.level,
+            ttGold: currentMember.ttGold,
+            streakFreezes: currentMember.streakFreezes,
+            lastCheckIn: currentMember.lastCheckIn,
+            isFromServer
+          });
         }
       }
     });
@@ -301,6 +310,7 @@ export function useUserStats(user: User | null) {
     userData,
     setUserData,
     teamMembers,
+    isTeamMembersLoaded,
     handleBuyItem,
     handleUseTicket,
     handleEquipItem,

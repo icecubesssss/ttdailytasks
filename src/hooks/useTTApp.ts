@@ -32,9 +32,9 @@ export function useTTApp() {
   const { playSound } = useAudio();
 
   // Custom Hooks
-  const { user, authError, isLoading } = useAppBootstrap({ setTasks });
+  const { user, authError, isLoading, isTasksLoaded } = useAppBootstrap({ setTasks });
   const { 
-    userData, setUserData, teamMembers, handleBuyItem, handleUseTicket, 
+    userData, setUserData, teamMembers, isTeamMembersLoaded, handleBuyItem, handleUseTicket, 
     handleEquipItem, handleUpdateSettings, awardTaskRewards, awardSubTaskRewards 
   } = useUserStats(user);
   
@@ -81,11 +81,14 @@ export function useTTApp() {
   useDeepLinks({ taskActions, isLoaded: userData.isLoaded });
 
   // Auto Sync Calendar events to tasks
+  // isTasksLoaded & isTeamMembersLoaded guard against startup race conditions (duplicate tasks)
   const { triggerSync } = useCalendarAutoSync({
     user,
     userData,
     teamMembers,
     tasks,
+    isTasksLoaded,
+    isTeamMembersLoaded,
     config,
     awardTaskRewards // Pass reward function for auto-completion
   });

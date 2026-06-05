@@ -164,6 +164,7 @@ export const getLegacyIdByEmail = (email: string | null | undefined): string | n
   if (!email) return null;
   const e = email.toLowerCase();
   if (e === 'dinhthai.ctv@gmail.com') return 'tit';
+  if (e === 'thaitd.mathtech@gmail.com') return 'tit';
   if (e === 'transontruc.03@gmail.com') return 'tun';
   return null;
 };
