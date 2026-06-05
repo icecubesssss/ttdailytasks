@@ -151,8 +151,8 @@ function AppMainContent({
             <button
               id="btn-toggle-task-form"
               onClick={() => setIsFormOpen((v) => !v)}
-              aria-expanded={isFormOpen}
-              aria-controls="task-form-panel"
+              aria-expanded={isFormOpen ? 'true' : 'false'}
+              aria-controls={isFormOpen ? 'task-form-panel' : undefined}
               className={`group flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-sm transition-all duration-300 active:scale-95 ${
                 isFormOpen
                   ? isDark

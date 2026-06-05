@@ -146,7 +146,7 @@ function TaskItem({
       {hasSubTasks && (
         <button
           onClick={() => setIsSubTasksOpen((v) => !v)}
-          aria-expanded={isSubTasksOpen}
+          aria-expanded={isSubTasksOpen ? 'true' : 'false'}
           aria-label={isSubTasksOpen ? 'Thu gọn subtasks' : 'Mở rộng subtasks'}
           className={`w-full mt-3 group/sub-toggle flex items-center gap-2 rounded-xl px-2 py-1.5 transition-all ${
             isDark ? 'hover:bg-slate-700/50' : 'hover:bg-slate-100/70'
@@ -199,9 +199,8 @@ function TaskItem({
                 autoFocus
                 aria-label="Hạn chót"
                 className={`bg-indigo-500/10 border border-indigo-500/30 rounded px-1 py-0.5 outline-none text-[10px] ${
-                  isDark ? 'text-indigo-300' : 'text-indigo-600'
+                  isDark ? 'text-indigo-300 scheme-dark' : 'text-indigo-600 scheme-light'
                 }`}
-                style={{ colorScheme: isDark ? 'dark' : 'light' }}
               />
             ) : (
               <button
@@ -372,7 +371,7 @@ function TaskItem({
       {!hasSubTasks && !isCompleted && !isLocked && (
         <button
           onClick={() => setIsSubTasksOpen((v) => !v)}
-          aria-expanded={isSubTasksOpen}
+          aria-expanded={isSubTasksOpen ? 'true' : 'false'}
           className={`mt-2 w-full text-[9px] font-bold uppercase tracking-widest py-1 rounded-lg transition-all ${
             isSubTasksOpen
               ? isDark ? 'text-slate-500 hover:text-slate-400' : 'text-slate-400 hover:text-slate-500'
