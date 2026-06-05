@@ -87,6 +87,10 @@ function setupTriggers() {
 function runAutomation() {
   var token = getFirestoreToken_();           // Service Account token
   var docs = listAllTasks_(token);            // fetch 1 lần, dùng chung
+  if (docs === null) {
+    Logger.log('[Automation] Bỏ qua — không đọc được tasks từ Firestore.');
+    return;
+  }
   var createdDocs = syncCalendarToTasks_(token, docs); // (2) tạo task còn thiếu
   processTaskLifecycle_(token, docs.concat(createdDocs || [])); // (3) start/done/pause
 }
@@ -94,6 +98,39 @@ function runAutomation() {
 /* ============================================================================
  * (1) PROXY ĐỌC LỊCH CHO WEB APP — giữ nguyên hành vi v6.0
  * ==========================================================================*/
+function doPost(e) {
+  try {
+    var body = JSON.parse(e.postData.contents);
+    if (body.action === 'uploadMusic') {
+      return uploadMusicToDrive_(body);
+    }
+    return jsonOut_({ success: false, error: 'Unknown action' });
+  } catch (err) {
+    return jsonOut_({ success: false, error: err.toString() });
+  }
+}
+
+function uploadMusicToDrive_(body) {
+  var fileName = body.fileName || 'track.mp3';
+  var mimeType = body.mimeType || 'audio/mpeg';
+  if (!body.base64) {
+    return jsonOut_({ success: false, error: 'Missing file data' });
+  }
+
+  var blob = Utilities.newBlob(Utilities.base64Decode(body.base64), mimeType, fileName);
+  var folderName = 'TT Daily Task Music';
+  var folders = DriveApp.getFoldersByName(folderName);
+  var folder = folders.hasNext() ? folders.next() : DriveApp.createFolder(folderName);
+  var file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  return jsonOut_({
+    success: true,
+    id: file.getId(),
+    url: 'https://drive.google.com/uc?export=download&id=' + file.getId()
+  });
+}
+
 function doGet(e) {
   if (e.parameter.mode === 'widget') {
     try {
@@ -139,17 +176,34 @@ function syncCalendarToTasks() {              // bản gọi tay để test
   syncCalendarToTasks_(token, listAllTasks_(token));
 }
 
+function normalizeEventId_(id) {
+  if (!id) return '';
+  return String(id).replace(/@google\.com$/i, '').split('_')[0];
+}
+
+function taskMatchesCalendarEvent_(doc, ev) {
+  var f = doc.fields || {};
+  var calId = stringField_(f.calendarEventId);
+  if (calId && ev.id) {
+    if (calId === ev.id) return true;
+    if (normalizeEventId_(calId) === normalizeEventId_(ev.id)) return true;
+  }
+  return (
+    stringField_(f.title) === ev.title &&
+    numberField_(f.scheduledStartTime) === ev.start &&
+    stringField_(f.assigneeId) === ev.assigneeId
+  );
+}
+
 function syncCalendarToTasks_(token, existingDocs) {
+  if (existingDocs === null) {
+    Logger.log('[Sync] Bỏ qua tạo task — không đọc được danh sách hiện có.');
+    return [];
+  }
+
   var now = Date.now();
   var tMin = new Date(now - 24 * 3600 * 1000);          // 24h trước
   var tMax = new Date(now + 2 * 24 * 3600 * 1000);      // 2 ngày tới
-
-  // Tập calendarEventId đã có -> chống tạo trùng
-  var seen = {};
-  (existingDocs || []).forEach(function (d) {
-    var id = ((d.fields || {}).calendarEventId || {}).stringValue;
-    if (id) seen[id] = true;
-  });
 
   var events = []
     .concat(readCalendar_(CALENDAR_ID_TIT, 'tit', tMin, tMax))
@@ -158,11 +212,15 @@ function syncCalendarToTasks_(token, existingDocs) {
   var created = 0;
   var createdDocs = [];
   events.forEach(function (ev) {
-    if (seen[ev.id]) return;
+    var exists = (existingDocs || []).some(function (d) {
+      return taskMatchesCalendarEvent_(d, ev);
+    });
+    if (exists) return;
+
     var createdDoc = createTaskDoc_(token, ev);
     if (createdDoc) {
       createdDocs.push(createdDoc);
-      seen[ev.id] = true;
+      existingDocs.push(createdDoc);
       created++;
     }
   });
@@ -352,7 +410,7 @@ function listAllTasks_(token) {
     var resp = UrlFetchApp.fetch(url, { headers: headers, muteHttpExceptions: true });
     if (resp.getResponseCode() >= 300) {
       Logger.log('[List] Lỗi đọc tasks (' + resp.getResponseCode() + '): ' + resp.getContentText());
-      break;
+      return null;
     }
     var data = JSON.parse(resp.getContentText());
     if (data.documents) all = all.concat(data.documents);
@@ -401,8 +459,12 @@ function getWidgetPayload_(userKey) {
   });
   return {
     stats: {
-      streak: numberField_((statsDoc && statsDoc.fields || {}).streak),
-      updatedAt: numberField_((statsDoc && statsDoc.fields || {}).updatedAt)
+      streak:        numberField_((statsDoc && statsDoc.fields || {}).streak),
+      level:         numberField_((statsDoc && statsDoc.fields || {}).level),
+      xp:            numberField_((statsDoc && statsDoc.fields || {}).xp),
+      ttGold:        numberField_((statsDoc && statsDoc.fields || {}).ttGold),
+      streakFreezes: numberField_((statsDoc && statsDoc.fields || {}).streakFreezes),
+      updatedAt:     numberField_((statsDoc && statsDoc.fields || {}).updatedAt)
     },
     tasks: tasks
   };

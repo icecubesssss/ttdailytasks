@@ -69,6 +69,7 @@ export default function FocusView({
     uploadProgress,
     handleFileUpload,
     handleDeleteTrack,
+    handleAddViaUrl,
     handleRandomPlay
   } = useFocusMusic(userData);
 
@@ -292,7 +293,7 @@ export default function FocusView({
         cachedIds={cachedIds}
         totalTracks={tracks.length}
         onFileUpload={handleFileUpload}
-        onAddViaUrl={() => {}}
+        onAddViaUrl={handleAddViaUrl}
         onDeleteTrack={handleDeleteTrack}
         uploadProgress={uploadProgress}
       />

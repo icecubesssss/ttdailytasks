@@ -58,6 +58,7 @@ export interface UseFocusMusicReturn {
   uploadProgress: number;
   handleFileUpload: (file: File, selectedMood?: string) => Promise<void>;
   handleDeleteTrack: (track: MusicTrackData) => Promise<void>;
+  handleAddViaUrl: (url: string) => Promise<void>;
   handleRandomPlay: () => void;
   audioRef: React.MutableRefObject<HTMLAudioElement>;
 }
@@ -90,36 +91,52 @@ export function useFocusMusic(userData: UserData): UseFocusMusicReturn {
     });
   }, [patchUserData]);
 
+  const isDirectStreamUrl = (url: string) =>
+    /sharepoint\.com|onedrive\.live\.com|1drv\.ms|drive\.google\.com|dropbox\.com|soundhelix\.com/i.test(url);
+
   // --- Load Shared Music ---
   useEffect(() => {
     const q = query(collection(db, 'shared_music'), orderBy('createdAt', 'desc'));
-    const unsubscribe: Unsubscribe = onSnapshot(q, (snapshot) => {
-      const nextTracks = snapshot.docs
-        .map((snap): MusicTrackData | null => {
-          const data = snap.data() as FirestoreMusicTrack;
-          if (!data.title || !data.url) return null;
-          return {
-            id: snap.id,
-            title: data.title,
-            url: data.url,
-            mood: data.mood,
-            artist: data.artist,
-            cover: data.cover,
-            storagePath: data.storagePath,
-            driveId: data.driveId,
-            isCustom: data.isCustom,
-            createdAt: data.createdAt || new Date(0).toISOString(),
-            uploadedBy: data.uploadedBy || 'unknown'
-          };
-        })
-        .filter((track): track is MusicTrackData => Boolean(track));
-      setCustomTracks(nextTracks);
-    });
+    const unsubscribe: Unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const nextTracks = snapshot.docs
+          .map((snap): MusicTrackData | null => {
+            const data = snap.data() as FirestoreMusicTrack;
+            if (!data.title || !data.url) return null;
+            return {
+              id: snap.id,
+              title: data.title,
+              url: data.url,
+              mood: data.mood,
+              artist: data.artist,
+              cover: data.cover,
+              storagePath: data.storagePath,
+              driveId: data.driveId,
+              isCustom: data.isCustom,
+              createdAt: data.createdAt || new Date(0).toISOString(),
+              uploadedBy: data.uploadedBy || 'unknown'
+            };
+          })
+          .filter((track): track is MusicTrackData => Boolean(track));
+        setCustomTracks(nextTracks);
+      },
+      (error) => {
+        console.error('[FocusMusic] Không đọc được shared_music:', error);
+      }
+    );
     return () => unsubscribe();
   }, []);
 
   const tracks = customTracks;
   const currentTrack = tracks[currentTrackIdx] || null;
+
+  useEffect(() => {
+    if (tracks.length === 0) return;
+    if (currentTrackIdx >= tracks.length) {
+      setMusicState({ currentTrackIdx: 0 });
+    }
+  }, [tracks.length, currentTrackIdx, setMusicState]);
 
   // --- Migration Logic ---
   useEffect(() => {
@@ -193,8 +210,7 @@ export function useFocusMusic(userData: UserData): UseFocusMusicReturn {
   // --- Caching ---
   const ensureTrackCached = async (track: MusicTrackData | null): Promise<string | null> => {
     if (!track) return null;
-    const isExternal = track.url.includes('sharepoint.com') || track.url.includes('soundhelix.com');
-    if (isExternal) return track.url;
+    if (isDirectStreamUrl(track.url)) return track.url;
 
     try {
       const cached = await musicStore.getTrack(track.id);
@@ -314,13 +330,33 @@ export function useFocusMusic(userData: UserData): UseFocusMusicReturn {
     } catch { alert('Xóa nhạc thất bại.'); }
   };
 
+  const handleAddViaUrl = async (url: string) => {
+    const trimmed = url.trim();
+    if (!trimmed) return;
+    try {
+      const label = decodeURIComponent(trimmed.split('/').pop()?.split('?')[0] || 'Custom Track');
+      await addDoc(collection(db, 'shared_music'), {
+        mood: 'all',
+        title: label,
+        artist: isDirectStreamUrl(trimmed) ? 'Cloud Link' : 'Custom Link',
+        cover: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=400&fit=crop',
+        url: trimmed,
+        isCustom: true,
+        createdAt: new Date().toISOString(),
+        uploadedBy: userData.uid || 'unknown'
+      });
+    } catch (err: unknown) {
+      alert('Thêm link nhạc thất bại: ' + (err instanceof Error ? err.message : String(err)));
+    }
+  };
+
   return {
     tracks, currentTrack, currentTrackIdx, setCurrentTrackIdx: (idx: number) => setMusicState({ currentTrackIdx: idx }),
     isPlaying, setIsPlaying: (val: boolean) => setMusicState({ isPlaying: val }), togglePlay, handleNext, handlePrevious,
     currentTime, duration, handleSeek,
     volume, setVolume: (val: number) => setMusicState({ volume: val }), isMuted, setIsMuted: (val: boolean) => setMusicState({ isMuted: val }),
     isCaching, cachedIds, uploadProgress,
-    handleFileUpload, handleDeleteTrack, handleRandomPlay,
+    handleFileUpload, handleDeleteTrack, handleAddViaUrl, handleRandomPlay,
     audioRef
   };
 }

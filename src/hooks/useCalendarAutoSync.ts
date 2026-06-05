@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { startOfDay, endOfDay, isSameDay, addDays } from 'date-fns';
+import { endOfDay, addDays } from 'date-fns';
 import { parseGCalEvent } from '../utils/calendarUtils';
 import { addTask } from '../services/taskService';
 import { ASSIGNEES } from '../utils/constants';
@@ -70,28 +70,20 @@ export const useCalendarAutoSync = ({
     console.log(`[AutoSync] Triggering sync... Reason: ${options?.reason || 'periodic'}`);
 
     const { calendarApiKey, calendarIdTit, calendarIdTun, appsScriptUrl } = config;
-    if (!appsScriptUrl && !calendarApiKey) return;
+
+    // Apps Script runAutomation đã tạo task mỗi 5' — tránh sync kép gây trùng
+    if (appsScriptUrl) {
+      console.log('[AutoSync] Skipping client-side task creation (Apps Script handles sync)');
+      return;
+    }
+
+    if (!calendarApiKey) return;
 
     // Expand window: From 24 hours ago until 48 hours in the future
     const tMin = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const tMax = endOfDay(addDays(new Date(), 2));
 
-    const fetchViaAppsScript = async (calId: string, owner: string): Promise<CalendarEvent[]> => {
-      if (!calId) return [];
-      const params = new URLSearchParams({
-        calendarId: calId,
-        timeMin: tMin.toISOString(),
-        timeMax: tMax.toISOString(),
-      });
-      try {
-        const res = await fetch(`${appsScriptUrl}?${params}`);
-        if (!res.ok) return [];
-        const data = await res.json();
-        if (data?.error) return [];
-        return (data.items || []).map((e: any) => parseGCalEvent(e, owner));
-      } catch { return []; }
-    };
-
+    // Only reached when Apps Script URL is NOT set — use Google Calendar API directly
     const fetchViaDirectApi = async (calId: string, owner: string): Promise<CalendarEvent[]> => {
       if (!calId || !calendarApiKey) return [];
       const params = new URLSearchParams({
@@ -111,19 +103,9 @@ export const useCalendarAutoSync = ({
       } catch { return []; }
     };
 
-    const fetchOne = async (calId: string, owner: string): Promise<CalendarEvent[]> => {
-      if (!calId) return [];
-      if (appsScriptUrl) {
-        const scriptEvents = await fetchViaAppsScript(calId, owner);
-        if (scriptEvents.length > 0) return scriptEvents;
-      }
-      if (calendarApiKey) return await fetchViaDirectApi(calId, owner);
-      return [];
-    };
-
     const [titEvents, tunEvents] = await Promise.all([
-      fetchOne(calendarIdTit, 'tit'),
-      fetchOne(calendarIdTun, 'tun'),
+      fetchViaDirectApi(calendarIdTit, 'tit'),
+      fetchViaDirectApi(calendarIdTun, 'tun'),
     ]);
 
     const allEvents = [...titEvents, ...tunEvents].filter(
@@ -135,26 +117,32 @@ export const useCalendarAutoSync = ({
     // Local set to avoid creating duplicates in the same loop
     const newlyCreatedTitles = new Set<string>();
 
+    const normalizeEventId = (id?: string | null) =>
+      id ? id.replace(/@google\.com$/i, '').split('_')[0] : '';
+
     for (const event of allEvents) {
+      const assignee = teamMembers?.find(m => {
+        if (!m?.email) return false;
+        return getLegacyIdByEmail(m.email) === event.owner;
+      }) || null;
+      const assigneeId = assignee?.uid || event.owner;
+
       // Check if task already exists for this event
       const exists = tasks.some((t) => {
-        if (event.id && t.calendarEventId) return t.calendarEventId === event.id;
+        if (event.id && t.calendarEventId) {
+          if (t.calendarEventId === event.id) return true;
+          if (normalizeEventId(t.calendarEventId) === normalizeEventId(event.id)) return true;
+        }
         return (
           t.scheduledStartTime === event.start.getTime() &&
           t.title === event.title &&
-          Boolean(t.deadline) &&
-          isSameDay(new Date(t.deadline as number), event.start)
+          (t.assigneeId === assigneeId || !t.assigneeId)
         );
-      }) || newlyCreatedTitles.has(`${event.title}-${event.start.getTime()}`);
+      }) || newlyCreatedTitles.has(`${event.title}-${event.start.getTime()}-${assigneeId}`);
 
       if (!exists) {
         console.log(`[AutoSync] Creating automated task for event: ${event.title}`);
-        newlyCreatedTitles.add(`${event.title}-${event.start.getTime()}`);
-        
-        const assignee = teamMembers?.find(m => {
-          if (!m?.email) return false;
-          return getLegacyIdByEmail(m.email) === event.owner;
-        }) || null;
+        newlyCreatedTitles.add(`${event.title}-${event.start.getTime()}-${assigneeId}`);
 
         const durationMins = Math.max(25, Math.round((event.end.getTime() - event.start.getTime()) / 60000));
         const durationMs = durationMins * 60 * 1000;
