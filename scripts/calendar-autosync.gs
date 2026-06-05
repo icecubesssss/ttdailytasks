@@ -25,14 +25,22 @@
  *     việc ghi Firestore dùng Service Account ở mục B.)
  *
  * B) GHI FIRESTORE BẰNG SERVICE ACCOUNT (BẮT BUỘC — tránh lỗi 403 của
- *    token người dùng):
- *    1. Firebase Console → Project Settings → tab "Service accounts" →
- *       "Generate new private key" → tải file JSON.
- *    2. Mở file JSON, copy 2 giá trị: `client_email` và `private_key`.
- *    3. Apps Script → ⚙️ Project Settings → Script Properties → Add property:
+ *    token người dùng). Chọn MỘT trong các cách sau:
+ *
+ *    Cách 1 (khuyên dùng): Script Properties → thêm 2 property:
  *         SA_CLIENT_EMAIL = <client_email>
  *         SA_PRIVATE_KEY  = <private_key>  (dán nguyên, kể cả \n)
- *    (Service account mặc định của Firebase đã có quyền ghi Firestore.)
+ *
+ *    Cách 2: Script Properties → thêm 1 property:
+ *         SA_JSON = <dán nguyên nội dung file JSON service account>
+ *
+ *    Cách 3: Điền SA_EMAIL / SA_PRIVATE_KEY trong mục CẤU HÌNH bên dưới.
+ *
+ *    Cách 4: Chạy `setupServiceAccountFromJson` MỘT LẦN (dán JSON vào biến
+ *            json trong hàm) → tự lưu vào Script Properties.
+ *
+ *    Lấy file JSON: Firebase Console → Project Settings → Service accounts →
+ *    Generate new private key.
  *
  * C) Kiểm tra UID Firebase của Tít/Tún trong UID_TIT / UID_TUN bên dưới để
  *    task nền và Scriptable widget gán/đọc đúng người.
@@ -41,7 +49,8 @@
  *    (chọn hàm → Run), cấp quyền khi hỏi.
  *    Từ đó runAutomation tự chạy mỗi 5 phút.
  *
- * E) (Kiểm tra) Chạy `syncCalendarToTasks` thủ công, xem Logs (Ctrl+Enter).
+ * E) (Kiểm tra) Chạy `verifyFirestoreAccess` trước, rồi chạy
+ *    `syncCalendarToTasks` thủ công, xem Logs (Ctrl+Enter).
  * ===================================================================
  */
 
@@ -56,6 +65,9 @@ var NAME_TIT = 'Tít';
 var NAME_TUN = 'Tún';
 var TIMEOUT_MS = 5 * 60 * 1000;   // quá 5' không có heartbeat -> pause task thủ công
 var MIN_DURATION_MINS = 25;       // thời lượng tối thiểu cho countdown
+// Service Account — ưu tiên Script Properties; fallback: sa-credentials.gs (local)
+var SA_EMAIL = '';
+var SA_PRIVATE_KEY = '';
 // ===================
 
 var TASKS_PATH = 'projects/' + PROJECT_ID + '/databases/(default)/documents/artifacts/' +
@@ -148,9 +160,11 @@ function syncCalendarToTasks_(token, existingDocs) {
   events.forEach(function (ev) {
     if (seen[ev.id]) return;
     var createdDoc = createTaskDoc_(token, ev);
-    if (createdDoc) createdDocs.push(createdDoc);
-    seen[ev.id] = true;
-    created++;
+    if (createdDoc) {
+      createdDocs.push(createdDoc);
+      seen[ev.id] = true;
+      created++;
+    }
   });
   Logger.log('[Sync] Tạo mới ' + created + '/' + events.length + ' task từ lịch.');
   return createdDocs;
@@ -227,6 +241,35 @@ function createTaskDoc_(token, ev) {
 function checkHeartbeatTimeout() {            // bản gọi tay để test
   var token = getFirestoreToken_();
   processTaskLifecycle_(token, listAllTasks_(token));
+}
+
+/** Chạy MỘT LẦN: dán nội dung file JSON service account vào biến `json`. */
+function setupServiceAccountFromJson() {
+  var json = ''; // <-- dán JSON Firebase service account vào đây
+  if (!json) {
+    throw new Error('Dán nội dung file JSON service account vào biến json trong hàm này.');
+  }
+  var sa = JSON.parse(json);
+  if (!sa.client_email || !sa.private_key) {
+    throw new Error('JSON thiếu client_email hoặc private_key.');
+  }
+  PropertiesService.getScriptProperties().setProperties({
+    SA_CLIENT_EMAIL: sa.client_email,
+    SA_PRIVATE_KEY: sa.private_key
+  });
+  Logger.log('Đã lưu Script Properties. SA_CLIENT_EMAIL=' + sa.client_email);
+}
+
+function verifyFirestoreAccess() {
+  var creds = getServiceAccountCredentials_();
+  Logger.log('[Verify] SA_CLIENT_EMAIL=' + creds.email);
+  var token = getFirestoreToken_();
+  var resp = UrlFetchApp.fetch(TASKS_URL + '?pageSize=1', {
+    headers: { Authorization: 'Bearer ' + token },
+    muteHttpExceptions: true
+  });
+  Logger.log('[Verify] List tasks status=' + resp.getResponseCode());
+  Logger.log('[Verify] Body=' + resp.getContentText());
 }
 
 function processTaskLifecycle_(token, docs) {
@@ -343,8 +386,7 @@ function getWidgetPayload_(userKey) {
   };
   var user = users[key] || users.tit;
   var token = getFirestoreToken_();
-  var statsDoc = getDocByPath_(token, 'artifacts/' + APP_ID + '/public/data/widget_stats/' + user.uid) ||
-    getDocByPath_(token, 'artifacts/' + APP_ID + '/users/' + user.uid + '/profile/stats');
+  var statsDoc = getDocByPath_(token, 'artifacts/' + APP_ID + '/public/data/team_members/' + user.uid);
   var tasks = listAllTasks_(token).map(function (doc) {
     var f = doc.fields || {};
     return {
@@ -390,16 +432,44 @@ function numberField_(field) {
  * ==========================================================================*/
 var _SA_TOKEN_CACHE = null;   // cache trong 1 lần thực thi
 
-/** Lấy access token từ Service Account (Script Properties SA_*). */
+/** Đọc service account từ Script Properties, SA_JSON, hoặc hằng số SA_EMAIL. */
+function getServiceAccountCredentials_() {
+  var props = PropertiesService.getScriptProperties();
+  var email = props.getProperty('SA_CLIENT_EMAIL');
+  var key = props.getProperty('SA_PRIVATE_KEY');
+
+  if (!email || !key) {
+    var jsonRaw = props.getProperty('SA_JSON');
+    if (jsonRaw) {
+      var sa = JSON.parse(jsonRaw);
+      email = sa.client_email;
+      key = sa.private_key;
+    }
+  }
+
+  email = email || SA_EMAIL;
+  key = key || SA_PRIVATE_KEY;
+  key = (key || '').replace(/\\n/g, '\n');
+
+  if (!email || !key) {
+    throw new Error(
+      'Thiếu Service Account. Xem mục B đầu file:\n' +
+      '  • Script Properties: SA_CLIENT_EMAIL + SA_PRIVATE_KEY\n' +
+      '  • hoặc SA_JSON (dán cả file JSON)\n' +
+      '  • hoặc điền SA_EMAIL / SA_PRIVATE_KEY trong CẤU HÌNH\n' +
+      '  • hoặc chạy setupServiceAccountFromJson() một lần'
+    );
+  }
+  return { email: email, key: key };
+}
+
+/** Lấy access token từ Service Account. */
 function getFirestoreToken_() {
   if (_SA_TOKEN_CACHE) return _SA_TOKEN_CACHE;
 
-  var props = PropertiesService.getScriptProperties();
-  var email = props.getProperty('SA_CLIENT_EMAIL');
-  var key = (props.getProperty('SA_PRIVATE_KEY') || '').replace(/\\n/g, '\n');
-  if (!email || !key) {
-    throw new Error('Thiếu Script Properties SA_CLIENT_EMAIL / SA_PRIVATE_KEY (xem mục B đầu file).');
-  }
+  var creds = getServiceAccountCredentials_();
+  var email = creds.email;
+  var key = creds.key;
 
   var now = Math.floor(Date.now() / 1000);
   var header = { alg: 'RS256', typ: 'JWT' };

@@ -18,7 +18,10 @@ export function useFocusTimer(user: User | null, tasks: Task[]): UseFocusTimerRe
     if (!user) return;
     const focusingTask = tasks.find(t => t.id === focusingTaskId);
     if (focusingTask) {
-      window.postMessage({ type: 'TT_FOCUS_START', taskTitle: focusingTask.title }, '*');
+      window.postMessage(
+        { type: 'TT_FOCUS_START', taskTitle: focusingTask.title, ownerUid: user.uid },
+        '*'
+      );
     } else {
       window.postMessage({ type: 'TT_FOCUS_END' }, '*');
     }
@@ -34,7 +37,10 @@ export function useFocusTimer(user: User | null, tasks: Task[]): UseFocusTimerRe
 
       const focusingTask = tasks.find(t => t.id === focusingTaskId);
       if (focusingTask) {
-        window.postMessage({ type: 'TT_FOCUS_START', taskTitle: focusingTask.title }, '*');
+        window.postMessage(
+          { type: 'TT_FOCUS_START', taskTitle: focusingTask.title, ownerUid: user.uid },
+          '*'
+        );
       } else {
         window.postMessage({ type: 'TT_FOCUS_END' }, '*');
       }

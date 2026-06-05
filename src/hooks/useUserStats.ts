@@ -38,7 +38,6 @@ export function useUserStats(user: User | null) {
   const [isTeamMembersLoaded, setIsTeamMembersLoaded] = useState(false);
   const alertedLevelRef = useRef<number>(0);
   const isTeamMembersLoadedRef = useRef(false);
-
   // 1. Sync User Stats
   useEffect(() => {
     if (!user || user.uid === "local-user-test") return;
@@ -173,13 +172,16 @@ export function useUserStats(user: User | null) {
       if (!userData.isFromServer) return;
 
       try {
-        await userService.updateTeamMemberActive(user.uid, {
-          photoURL: undefined,
+        const widgetStats = {
           streak: userData.streak || 0,
           xp: userData.xp || 0,
           level: userData.level || 1,
           ttGold: userData.ttGold || 0,
           streakFreezes: userData.streakFreezes || 0,
+        };
+        await userService.updateTeamMemberActive(user.uid, {
+          photoURL: undefined,
+          ...widgetStats,
           lastCheckIn: userData.lastCheckIn
         });
       } catch {

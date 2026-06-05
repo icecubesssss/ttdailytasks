@@ -29,6 +29,7 @@ tmp/
 # Firebase admin key (local only)
 service-account*.json
 *.service-account.json
+scripts/sa-credentials.gs
 
 #env files
 .env

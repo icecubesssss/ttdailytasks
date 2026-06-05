@@ -48,7 +48,8 @@
       console.log("[TT Focus Guard] Nhận được tín hiệu TT_FOCUS_START từ web app", event.data);
       safeSendMessage({
         type: "TT_FOCUS_START",
-        taskTitle: event.data.taskTitle || "Tập trung làm việc"
+        taskTitle: event.data.taskTitle || "Tập trung làm việc",
+        ownerUid: event.data.ownerUid || null,
       });
     }
 

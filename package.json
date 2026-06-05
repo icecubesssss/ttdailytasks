@@ -11,7 +11,8 @@
     "pack": "repomix",
     "migrate:assignee": "node scripts/migrate-assignee.mjs",
     "migrate:assignee:dry": "node scripts/migrate-assignee-admin.mjs",
-    "migrate:assignee:apply": "node scripts/migrate-assignee-admin.mjs --apply"
+    "migrate:assignee:apply": "node scripts/migrate-assignee-admin.mjs --apply",
+    "deploy:widget-infra": "firebase deploy --only firestore:rules"
   },
   "dependencies": {
     "canvas-confetti": "^1.9.4",

@@ -78,6 +78,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // (content.js dùng safeSendMessage không await response)
   // Không return true → tránh lỗi "message channel closed"
   if (message.type === "TT_FOCUS_START") {
+    if (message.ownerUid) {
+      chrome.storage.local.set({ ownerUid: message.ownerUid });
+    }
     handleToggleBlocking(true, message.taskTitle);
     return false;
   }
@@ -243,6 +246,17 @@ chrome.idle.setDetectionInterval(IDLE_TIMEOUT_SEC);
 // - isBlocking=false nhưng có task đang running → bật blocking (re-sync sau khi reinstall)
 const POLL_INTERVAL_MS = 60_000; // 1 phút
 
+function firestoreString(fields, key) {
+  return (fields?.[key] || {}).stringValue || null;
+}
+
+function isMyRunningTask(doc, ownerUid) {
+  const f = doc.fields || {};
+  if (firestoreString(f, 'status') !== 'running') return false;
+  if (!ownerUid) return false;
+  return firestoreString(f, 'currentWorker') === ownerUid;
+}
+
 async function syncBlockingWithFirestore() {
   try {
     const resp = await fetch(TASKS_PATH);
@@ -253,13 +267,14 @@ async function syncBlockingWithFirestore() {
     const result = await resp.json();
     const docs = result.documents || [];
 
-    // Tìm task đang running
-    const runningDoc = docs.find(doc => {
-      const f = doc.fields || {};
-      return (f.status || {}).stringValue === 'running';
-    });
+    const { isBlocking, ownerUid } = await chrome.storage.local.get(['isBlocking', 'ownerUid']);
 
-    const data = await chrome.storage.local.get(['isBlocking']);
+    // Chỉ block khi task running thuộc về user của máy này (tit/tun)
+    const runningDoc = ownerUid
+      ? docs.find(doc => isMyRunningTask(doc, ownerUid))
+      : null;
+
+    const data = { isBlocking };
 
     if (runningDoc && !data.isBlocking) {
       // Task đang chạy nhưng extension không biết (vd: vừa reinstall)
@@ -292,7 +307,7 @@ chrome.alarms.onAlarm.addListener(alarm => {
 // Listen for idle state changes
 chrome.idle.onStateChanged.addListener(async (state) => {
   // Only act when focus mode is active AND user is idle/locked
-  const data = await chrome.storage.local.get(['isBlocking']);
+  const data = await chrome.storage.local.get(['isBlocking', 'ownerUid']);
   if (!data.isBlocking) return;
   if (state !== 'idle' && state !== 'locked') return;
 
@@ -308,10 +323,12 @@ chrome.idle.onStateChanged.addListener(async (state) => {
     const result = await resp.json();
     const docs = result.documents || [];
     const now = Date.now();
+    const ownerUid = data.ownerUid;
 
     for (const doc of docs) {
       const f = doc.fields || {};
       if ((f.status || {}).stringValue !== 'running') continue;
+      if (ownerUid && firestoreString(f, 'currentWorker') !== ownerUid) continue;
 
       // SKIP AUTOMATED TASKS: they follow the schedule regardless of user presence
       if ((f.isAutomated || {}).booleanValue) {
