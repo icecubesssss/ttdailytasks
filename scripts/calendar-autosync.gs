@@ -74,16 +74,20 @@ var TASKS_PATH = 'projects/' + PROJECT_ID + '/databases/(default)/documents/arti
   APP_ID + '/public/data/tasks';
 var TASKS_URL = 'https://firestore.googleapis.com/v1/' + TASKS_PATH;
 
-/** Cài/làm mới trigger: runAutomation chạy mỗi 5 phút. Chỉ chạy 1 lần. */
+/** Cài/làm mới trigger: runAutomation chạy mỗi ngày vào lúc 2h sáng. Chỉ chạy 1 lần. */
 function setupTriggers() {
   ScriptApp.getProjectTriggers().forEach(function (t) {
     if (t.getHandlerFunction() === 'runAutomation') ScriptApp.deleteTrigger(t);
   });
-  ScriptApp.newTrigger('runAutomation').timeBased().everyMinutes(5).create();
-  Logger.log('Đã cài trigger: runAutomation chạy mỗi 5 phút.');
+  ScriptApp.newTrigger('runAutomation')
+    .timeBased()
+    .everyDays(1)
+    .atHour(2)
+    .create();
+  Logger.log('Đã cài trigger: runAutomation chạy mỗi ngày vào lúc 2h sáng.');
 }
 
-/** Hàm trigger gọi mỗi 5': tạo task mới từ lịch + xử lý vòng đời task. */
+/** Hàm trigger gọi mỗi ngày vào lúc 2h sáng để đồng bộ task từ Calendar. */
 function runAutomation() {
   var token = getFirestoreToken_();           // Service Account token
   var docs = listAllTasks_(token);            // fetch 1 lần, dùng chung
@@ -91,8 +95,7 @@ function runAutomation() {
     Logger.log('[Automation] Bỏ qua — không đọc được tasks từ Firestore.');
     return;
   }
-  var createdDocs = syncCalendarToTasks_(token, docs); // (2) tạo task còn thiếu
-  processTaskLifecycle_(token, docs.concat(createdDocs || [])); // (3) start/done/pause
+  syncCalendarToTasks_(token, docs);          // tạo task còn thiếu cho ngày mới
 }
 
 /* ============================================================================
@@ -268,14 +271,14 @@ function createTaskDoc_(token, ev) {
     scheduledEndTime:   { integerValue: String(ev.end) },
     calendarEventId:    { stringValue: ev.id },
     priority:           { stringValue: 'medium' },
-    type:               { stringValue: 'countdown' },
-    limitTime:          { integerValue: String(ev.durationMs) },
+    type:               { stringValue: 'stopwatch' },
+    limitTime:          { integerValue: '0' },
     isDone:             { booleanValue: ev.isPast },
     status:             { stringValue: ev.isPast ? 'completed' : 'idle' },
     totalTrackedTime:   { integerValue: String(ev.isPast ? ev.durationMs : 0) },
     createdAt:          { integerValue: String(Date.now()) },
     subTasks:           { arrayValue: { values: [] } },
-    isAutomated:        { booleanValue: true }
+    isAutomated:        { booleanValue: false }
   };
   if (ev.isPast) fields.endTime = { integerValue: String(ev.end) };
 

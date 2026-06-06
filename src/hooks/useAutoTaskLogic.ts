@@ -6,6 +6,7 @@ interface Task {
   status: 'idle' | 'running' | 'paused' | 'completed' | 'completed_late';
   scheduledStartTime?: number;
   scheduledEndTime?: number;
+  isAutomated?: boolean;
 }
 
 interface TaskActions {
@@ -33,10 +34,10 @@ export const useAutoTaskLogic = (
     if (!tasks || !tasks.length || !now || !taskActions) return;
 
     tasks.forEach(task => {
-      const { id, status, scheduledStartTime, scheduledEndTime } = task;
+      const { id, status, scheduledStartTime, scheduledEndTime, isAutomated } = task;
       
-      // We only care about tasks that have scheduling info from Calendar
-      if (!scheduledStartTime || !scheduledEndTime) return;
+      // We only care about tasks that have scheduling info from Calendar and are automated
+      if (!scheduledStartTime || !scheduledEndTime || !isAutomated) return;
 
       // AUTO-START logic
       if (
