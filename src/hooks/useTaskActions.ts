@@ -5,6 +5,8 @@ import * as aiService from '../services/aiService';
 import type { Task, SubTask } from '../utils/helpers';
 import type { User } from 'firebase/auth';
 import type { UserData } from '../utils/helpers';
+import { getAssigneeIdByEmail } from '../utils/helpers';
+import { countComboToday } from '../game/rewardEngine';
 
 interface TaskActionParams {
   tasks: Task[];
@@ -12,7 +14,7 @@ interface TaskActionParams {
   userData: UserData;
   setTasks: (tasks: Task[] | ((prev: Task[]) => Task[])) => void;
   triggerSystemFocus: (shortcutName: string) => void;
-  awardTaskRewards: (isLate: boolean) => Promise<void>;
+  awardTaskRewards: (isLate: boolean, comboCount?: number) => Promise<void>;
   awardSubTaskRewards: () => Promise<void>;
   playSound: (soundName: string) => void;
 }
@@ -122,7 +124,20 @@ export const useTaskActions = ({
           });
         }
 
-        await awardTaskRewards(isLate);
+        // Combo trong ngày: đếm các task mình đã hoàn thành hôm nay
+        const myAssignee = getAssigneeIdByEmail(user?.email);
+        const comboCount = countComboToday(
+          tasks
+            .filter(
+              (t) =>
+                t.id !== id &&
+                (t.status === 'completed' || t.status === 'completed_late') &&
+                (!myAssignee || t.assigneeId === myAssignee)
+            )
+            .map((t) => t.endTime)
+        );
+
+        await awardTaskRewards(isLate, comboCount);
       }
 
       // Optimistic Update: Cập nhật giao diện ngay lập tức

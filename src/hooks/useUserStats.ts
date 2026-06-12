@@ -1,15 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User } from 'firebase/auth';
+import confetti from 'canvas-confetti';
 import * as userService from '../services/userService';
-import { 
+import {
   getAssigneeIdByEmail, calculateLevel, TeamMember, UserData
 } from '../utils/helpers';
 import {
-  DEFAULT_AVATARS, BOOSTER_DURATIONS, GOLD_PER_TASK, GOLD_PER_SUBTASK, 
-  DAILY_CHECKIN_GOLD, XP_PER_TASK, DAILY_CHECKIN_XP, 
-  XP_PER_SUBTASK, SHOP_ITEMS, ShopItem
+  DEFAULT_AVATARS, BOOSTER_DURATIONS,
+  DAILY_CHECKIN_GOLD, DAILY_CHECKIN_XP,
+  SHOP_ITEMS, ShopItem
 } from '../utils/constants';
 import { useAppStore, defaultUserData } from '../store/useAppStore';
+import { computeTaskBaseReward, computeSubtaskReward } from '../game/rewardEngine';
+import { celebrate } from '../game/celebrationStore';
 
 const GIFTED_THEME_IDS = ['theme_sakura', 'theme_cyberpunk', 'theme_neon_night', 'theme_luxury_gold', 'theme_macos_26'];
 
@@ -88,12 +91,21 @@ export function useUserStats(user: User | null) {
           
           // Check if any shop items were unlocked at this specific level
           const unlockedItems = SHOP_ITEMS.filter(item => item.minLevel === currentLevel);
-          const unlockMessage = unlockedItems.length > 0 
-            ? `\n\nBạn đã mở khóa vật phẩm mới: ${unlockedItems.map(i => i.name).join(', ')}!` 
-            : '';
 
           setTimeout(() => {
-            alert(`🎉 CHÚC MỪNG! Bạn đã đạt Level ${currentLevel}!${unlockMessage}\nHãy kiểm tra Shop để nhận thưởng nhé.`);
+            confetti({
+              particleCount: 180,
+              spread: 90,
+              origin: { y: 0.7 },
+              colors: ['#6366f1', '#a855f7', '#ec4899', '#fbbf24']
+            });
+            celebrate({
+              kind: 'levelup',
+              label: `LEVEL ${currentLevel}!`,
+              sub: unlockedItems.length > 0
+                ? `Mở khóa: ${unlockedItems.map(i => i.name).join(', ')}`
+                : 'Ghé Shop nhận thưởng nha~'
+            });
             userService.updateUserStats(user.uid, { lastSeenLevel: currentLevel }).catch(ignoreAsyncError);
           }, 1000);
         }
@@ -269,43 +281,52 @@ export function useUserStats(user: User | null) {
     if (user && user.uid !== 'local-user-test') userService.updateUserStats(user.uid, updates).catch(ignoreAsyncError);
   };
 
-  const awardTaskRewards = async (isLate: boolean) => {
+  const awardTaskRewards = async (isLate: boolean, comboCount = 1) => {
     if (!user || user.uid === 'local-user-test') return;
-    
+
     // 1. Call Client-Side Transaction Logic (Spark Plan Compatible)
-    userService.callAwardRewards(user.uid, isLate).catch(e => {
+    userService.callAwardRewards(user.uid, isLate, comboCount).catch(e => {
       console.warn('Rewards transaction failed', e);
     });
 
     // 2. Optimistic UI (Simple feedback while server processes)
     // We don't simulate the complex streak logic locally anymore to avoid confusion
-    const xpEarned = isLate ? Math.floor(XP_PER_TASK / 2) : XP_PER_TASK;
-    const finalXp = (userData.xp || 0) + xpEarned;
-    
+    const base = computeTaskBaseReward(isLate, comboCount);
+    const finalXp = (userData.xp || 0) + base.xp;
+
     patchUserData({
       xp: finalXp,
-      ttGold: (userData.ttGold || 0) + GOLD_PER_TASK,
+      ttGold: (userData.ttGold || 0) + base.gold,
       level: calculateLevel(finalXp).level
     });
+
+    // 3. Celebration — phần thưởng phải "đã" ngay lập tức
+    const isFirstCheckInToday = userData.lastCheckIn !== new Date().toDateString();
+    celebrate(
+      { kind: 'gold', label: `+${base.gold} Gold` },
+      { kind: 'xp', label: `+${base.xp} XP` },
+      ...(comboCount >= 2
+        ? [{ kind: 'combo' as const, label: `COMBO x${comboCount}`, sub: `thưởng x${base.comboMult.toFixed(1)}` }]
+        : []),
+      ...(isFirstCheckInToday
+        ? [{ kind: 'checkin' as const, label: 'Điểm danh ngày mới!', sub: `+${DAILY_CHECKIN_XP} XP · +${DAILY_CHECKIN_GOLD} Gold` }]
+        : [])
+    );
   };
 
   const awardSubTaskRewards = async () => {
     if (!user || user.uid === 'local-user-test') return;
 
-    let xpG = XP_PER_SUBTASK;
-    let goldG = GOLD_PER_SUBTASK;
-    if (userData.activeBooster) {
-      if (userData.activeBooster.boosterType === 'xp') xpG *= userData.activeBooster.multiplier;
-      else if (userData.activeBooster.boosterType === 'gold') goldG *= userData.activeBooster.multiplier;
-    }
-    
+    const { xp: xpG, gold: goldG } = computeSubtaskReward(userData.activeBooster);
+
     const updates = {
-      xp: (userData.xp || 0) + Math.round(xpG),
-      ttGold: (userData.ttGold || 0) + Math.round(goldG)
+      xp: (userData.xp || 0) + xpG,
+      ttGold: (userData.ttGold || 0) + goldG
     };
 
     patchUserData(updates);
     userService.updateUserStats(user.uid, updates).catch(ignoreAsyncError);
+    celebrate({ kind: 'xp', label: `+${xpG} XP · +${goldG} Gold`, sub: 'subtask' });
   };
 
   return {

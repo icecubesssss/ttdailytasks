@@ -3,9 +3,10 @@ import {
   doc, onSnapshot, setDoc, updateDoc, collection, Unsubscribe, DocumentData, runTransaction
 } from 'firebase/firestore';
 import { UserData, TeamMember, calculateLevel } from '../utils/helpers';
-import { XP_PER_TASK, GOLD_PER_TASK, DAILY_CHECKIN_XP, DAILY_CHECKIN_GOLD } from '../utils/constants';
+import { DAILY_CHECKIN_XP, DAILY_CHECKIN_GOLD } from '../utils/constants';
+import { computeTaskBaseReward } from '../game/rewardEngine';
 
-export const callAwardRewards = async (uid: string, isLate: boolean) => {
+export const callAwardRewards = async (uid: string, isLate: boolean, comboCount = 1) => {
   const userStatsRef = doc(db, 'artifacts', appId, 'users', uid, 'profile', 'stats');
   const teamMemberRef = doc(db, 'artifacts', appId, 'public', 'data', 'team_members', uid);
 
@@ -17,10 +18,12 @@ export const callAwardRewards = async (uid: string, isLate: boolean) => {
 
     const userData = statsDoc.data() as UserData;
     const today = new Date().toDateString();
-    
+
     const updates: any = {};
-    let xpEarned = isLate ? Math.floor(XP_PER_TASK / 2) : XP_PER_TASK;
-    let goldEarned = GOLD_PER_TASK;
+    // Công thức thưởng đi qua Reward Engine (combo=1 ⇒ đúng bằng công thức cũ)
+    const base = computeTaskBaseReward(isLate, comboCount);
+    let xpEarned = base.xp;
+    let goldEarned = base.gold;
 
     // 1. Daily Check-in Logic
     if (userData.lastCheckIn !== today) {

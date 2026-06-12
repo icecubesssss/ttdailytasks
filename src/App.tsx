@@ -11,6 +11,7 @@ import AppOverlays from './components/layout/AppOverlays';
 import AppNavigation from './components/layout/AppNavigation';
 import AppSidebar from './components/layout/AppSidebar';
 import CommandPalette from './components/layout/CommandPalette';
+import CelebrationLayer from './components/game/CelebrationLayer';
 import { AppProviders } from './components/layout/AppProviders';
 
 const SIDEBAR_COLLAPSED_KEY = 'tt_sidebar_collapsed';
@@ -178,6 +179,9 @@ export default function App(): React.ReactElement {
           onTabChange={app.handleTabChange}
           showCalendarLink={app.activeTab === 'calendar'}
         />
+
+        {/* ── Chip thưởng bay (gold/xp/combo/level-up) ──────── */}
+        <CelebrationLayer />
       </div>
     </AppProviders>
   );
