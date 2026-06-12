@@ -198,13 +198,14 @@ export default function CalendarView({
         scheduledEndTime: event.end.getTime(),
         calendarEventId: event.id,
         priority: 'medium',
-        type: 'countdown',
-        limitTime: durationMs,
+        type: 'stopwatch',
+        limitTime: 0,
         isDone: false,
         status: 'idle',
         totalTrackedTime: 0,
         createdAt: Date.now(),
-        subTasks: []
+        subTasks: [],
+        isAutomated: false
       };
       const docRef = await addTask(newTask);
       if (docRef?.id && onStart) {

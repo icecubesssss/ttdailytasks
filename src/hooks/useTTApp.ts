@@ -75,7 +75,7 @@ export function useTTApp() {
   });
 
   // Automated logic for schedule
-  useAutoTaskLogic(tasks, now, taskActions);
+  useAutoTaskLogic(tasks, now, taskActions, user);
 
   // Deep Link Handling
   useDeepLinks({ taskActions, isLoaded: userData.isLoaded });

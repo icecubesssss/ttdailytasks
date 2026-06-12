@@ -57,7 +57,7 @@ export const useCalendarAutoSync = ({
     }
 
     // IMPORTANT: Respect the user's auto-sync setting
-    if (userData.autoSyncCalendar === false && !options?.force) {
+    if (!userData.autoSyncCalendar) {
       console.log(`[AutoSync] Skipping (Sync is OFF in settings)`);
       return;
     }
@@ -79,9 +79,11 @@ export const useCalendarAutoSync = ({
 
     if (!calendarApiKey) return;
 
-    // Expand window: From 24 hours ago until 48 hours in the future
-    const tMin = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const tMax = endOfDay(addDays(new Date(), 2));
+    // Sync window: Current day only (from 00:00:00 to 23:59:59.999)
+    const tMin = new Date();
+    tMin.setHours(0, 0, 0, 0);
+    const tMax = new Date();
+    tMax.setHours(23, 59, 59, 999);
 
     // Only reached when Apps Script URL is NOT set — use Google Calendar API directly
     const fetchViaDirectApi = async (calId: string, owner: string): Promise<CalendarEvent[]> => {
@@ -160,15 +162,15 @@ export const useCalendarAutoSync = ({
           scheduledEndTime: event.end.getTime(),
           calendarEventId: event.id,
           priority: 'medium' as const,
-          type: 'countdown' as const,
-          limitTime: durationMs,
+          type: 'stopwatch' as const,
+          limitTime: 0,
           isDone: isPast,
           status: isPast ? 'completed' as const : 'idle' as const,
           totalTrackedTime: isPast ? durationMs : 0,
           endTime: isPast ? event.end.getTime() : undefined,
           createdAt: Date.now(),
           subTasks: [],
-          isAutomated: true // CRITICAL: Mark as automated to skip heartbeat
+          isAutomated: false
         };
 
         await addTask(newTask);

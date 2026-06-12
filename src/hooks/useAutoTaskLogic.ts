@@ -1,4 +1,6 @@
 import { useEffect, useRef } from 'react';
+import type { User } from 'firebase/auth';
+import { getLegacyIdByEmail } from '../utils/helpers';
 
 interface Task {
   id: string;
@@ -7,6 +9,7 @@ interface Task {
   scheduledStartTime?: number;
   scheduledEndTime?: number;
   isAutomated?: boolean;
+  assigneeId?: string | null;
 }
 
 interface TaskActions {
@@ -22,22 +25,30 @@ interface TaskActions {
  * @param tasks - List of tasks
  * @param now - Current timestamp
  * @param taskActions - Object containing toggleTaskStatus
+ * @param user - Current logged-in user
  */
 export const useAutoTaskLogic = (
   tasks: Task[], 
   now: number, 
-  taskActions: TaskActions
+  taskActions: TaskActions,
+  user: User | null
 ): void => {
   const triggeredRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    if (!tasks || !tasks.length || !now || !taskActions) return;
+    if (!tasks || !tasks.length || !now || !taskActions || !user) return;
 
     tasks.forEach(task => {
-      const { id, status, scheduledStartTime, scheduledEndTime, isAutomated } = task;
+      const { id, status, scheduledStartTime, scheduledEndTime, isAutomated, assigneeId } = task;
       
       // We only care about tasks that have scheduling info from Calendar and are automated
       if (!scheduledStartTime || !scheduledEndTime || !isAutomated) return;
+
+      // Restrict status triggers to the assigned user to prevent cross-user tasks starting
+      const myUid = user.uid;
+      const myLegacyId = getLegacyIdByEmail(user.email);
+      const isAssignedToMe = !assigneeId || assigneeId === myUid || assigneeId === myLegacyId;
+      if (!isAssignedToMe) return;
 
       // AUTO-START logic
       if (
@@ -62,5 +73,5 @@ export const useAutoTaskLogic = (
         taskActions.toggleTaskStatus(id, 'complete', { completionSource: 'auto_schedule' });
       }
     });
-  }, [tasks, now, taskActions]);
+  }, [tasks, now, taskActions, user]);
 };
