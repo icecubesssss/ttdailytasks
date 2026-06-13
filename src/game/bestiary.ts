@@ -23,11 +23,23 @@ export interface Monster {
   intro: string;
   /** Ví dụ thói quen + đòn nhẹ gợi ý trong wizard */
   examples: Array<{ habit: string; tiny: string; emoji: string }>;
+  /** Chiêu thức của người chơi trong battle scene (kiểu Pokémon) */
+  moves: {
+    full: { name: string; emoji: string };
+    tiny: { name: string; emoji: string };
+  };
+  /** Tên chiêu dụ dỗ của quái (lượt quái đánh trước) */
+  attackName: string;
 }
 
 export const BESTIARY: Monster[] = [
   {
     id: 'mo_quai',
+    moves: {
+      full: { name: 'Plank Chấn Động', emoji: '🏋️' },
+      tiny: { name: 'Vươn Vai Tốc Hành', emoji: '🤸' }
+    },
+    attackName: 'Dụ Dỗ Chăn Ấm',
     name: 'Mỡ Quái',
     emoji: '🦛',
     identity: 'Người khỏe mạnh',
@@ -50,6 +62,11 @@ export const BESTIARY: Monster[] = [
   },
   {
     id: 'cu_dem',
+    moves: {
+      full: { name: 'Tắt Đèn Thần Chưởng', emoji: '🌙' },
+      tiny: { name: 'Báo Thức Liên Hoàn', emoji: '⏰' }
+    },
+    attackName: 'Cám Dỗ Một Tập Nữa',
     name: 'Cú Đêm',
     emoji: '🦉',
     identity: 'Người ngủ đủ giấc',
@@ -71,6 +88,11 @@ export const BESTIARY: Monster[] = [
   },
   {
     id: 'ma_tri_hoan',
+    moves: {
+      full: { name: 'Mở Sách Trảm', emoji: '📖' },
+      tiny: { name: 'Một Trang Công Phá', emoji: '📄' }
+    },
+    attackName: 'Lời Nguyền Để Mai Tính',
     name: 'Ma Trì Hoãn',
     emoji: '👻',
     identity: 'Người ham học',
@@ -93,6 +115,11 @@ export const BESTIARY: Monster[] = [
   },
   {
     id: 'zombie_luot',
+    moves: {
+      full: { name: 'Phong Ấn Màn Hình', emoji: '📵' },
+      tiny: { name: 'Tắt Thông Báo Chưởng', emoji: '🔕' }
+    },
+    attackName: 'Vuốt Vô Tận',
     name: 'Zombie Lướt',
     emoji: '🧟',
     identity: 'Người sống tỉnh táo',
@@ -114,6 +141,11 @@ export const BESTIARY: Monster[] = [
   },
   {
     id: 'quai_thung_vi',
+    moves: {
+      full: { name: 'Khóa Ví Vạn Tấn', emoji: '🔒' },
+      tiny: { name: 'Ghi Chép Nhất Kiếm', emoji: '✍️' }
+    },
+    attackName: 'Tiếng Gọi Flash Sale',
     name: 'Quái Thủng Ví',
     emoji: '🕳️',
     identity: 'Người vững tài chính',
@@ -135,6 +167,11 @@ export const BESTIARY: Monster[] = [
   },
   {
     id: 'suong_mu_lo_au',
+    moves: {
+      full: { name: 'Hơi Thở Thanh Tẩy', emoji: '🌬️' },
+      tiny: { name: 'Năm Nhịp Tĩnh Tâm', emoji: '🧘' }
+    },
+    attackName: 'Màn Sương Nhỡ Đâu',
     name: 'Sương Mù Lo Âu',
     emoji: '🌫️',
     identity: 'Người an yên',
@@ -156,6 +193,11 @@ export const BESTIARY: Monster[] = [
   },
   {
     id: 'bang_nguoi_lanh',
+    moves: {
+      full: { name: 'Ôm Ấp Liệt Hỏa', emoji: '🔥' },
+      tiny: { name: 'Tin Nhắn Tan Băng', emoji: '💌' }
+    },
+    attackName: 'Hơi Thở Nguội Lạnh',
     name: 'Băng Nguội Lạnh',
     emoji: '🧊',
     identity: 'Cặp đôi gắn bó',

@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import type { User } from 'firebase/auth';
 import * as habitService from '../services/habitService';
-import type { Habit } from '../services/habitService';
+import type { Habit, HabitCheckOutcome } from '../services/habitService';
 import { celebrate } from '../game/celebrationStore';
 import { getMonster, pickLine } from '../game/bestiary';
 import { getTodayKey, previewDamage, isCheckedForActor } from '../game/habitEngine';
@@ -21,7 +21,11 @@ export interface UseHabitsReturn {
   sealedHabits: Habit[];
   isLoaded: boolean;
   canCreateMore: boolean;
-  checkIn: (habit: Habit, mode: 'done' | 'tiny') => Promise<void>;
+  checkIn: (
+    habit: Habit,
+    mode: 'done' | 'tiny',
+    opts?: { silent?: boolean }
+  ) => Promise<HabitCheckOutcome | null>;
   createHabit: (
     data: Omit<Habit, 'id' | 'createdAt' | 'history' | 'dropsClaimed' | 'ownerId' | 'createdByUid'>
   ) => Promise<void>;
@@ -67,8 +71,13 @@ export function useHabits(user: User | null, currentAssigneeId: string | null): 
   );
 
   const checkIn = useCallback(
-    async (habit: Habit, mode: 'done' | 'tiny') => {
-      if (!user || user.uid === 'local-user-test') return;
+    async (
+      habit: Habit,
+      mode: 'done' | 'tiny',
+      opts?: { silent?: boolean }
+    ): Promise<HabitCheckOutcome | null> => {
+      if (!user || user.uid === 'local-user-test') return null;
+      const silent = opts?.silent === true;
       const todayKey = getTodayKey();
       const monster = getMonster(habit.monsterId);
       const damage = previewDamage(habit, mode);
@@ -104,69 +113,79 @@ export function useHabits(user: User | null, currentAssigneeId: string | null): 
         });
 
         if (outcome.action === 'unchecked') {
-          celebrate({ kind: 'damage', label: `${monster.name} hồi sức!`, sub: 'đã hoàn tác điểm danh' });
-          return;
+          if (!silent) {
+            celebrate({ kind: 'damage', label: `${monster.name} hồi sức!`, sub: 'đã hoàn tác điểm danh' });
+          }
+          return outcome;
         }
 
-        // Đòn đánh + thưởng
-        celebrate(
-          {
-            kind: 'damage',
-            label: `-${damage} HP ${monster.name}`,
-            sub: pickLine(monster.defeats, habit.id.length + new Date().getDate())
-          },
-          { kind: 'gold', label: `+${Math.max(0, outcome.goldDelta)} Gold` },
-          { kind: 'xp', label: `+${Math.max(0, outcome.xpDelta)} XP` }
-        );
-
-        if (outcome.drop?.type === 'gold') {
-          celebrate({ kind: 'drop', label: `Quái đánh rơi +${outcome.drop.amount} Gold!` });
-        } else if (outcome.drop?.type === 'shard') {
+        // Battle scene tự diễn các chip damage/gold/xp/drop — chỉ bắn chip nổi khi không silent
+        if (!silent) {
           celebrate(
-            outcome.drop.freezeEarned
-              ? { kind: 'freeze', label: '+1 STREAK FREEZE!', sub: 'ghép đủ 3 mảnh băng ❄️' }
-              : {
-                  kind: 'freeze',
-                  label: `Mảnh băng +1`,
-                  sub: `${outcome.drop.shards}/${FREEZE_SHARDS_PER_FREEZE} mảnh — đủ 3 đổi 1 Freeze`
-                }
+            {
+              kind: 'damage',
+              label: `-${damage} HP ${monster.name}`,
+              sub: pickLine(monster.defeats, habit.id.length + new Date().getDate())
+            },
+            { kind: 'gold', label: `+${Math.max(0, outcome.goldDelta)} Gold` },
+            { kind: 'xp', label: `+${Math.max(0, outcome.xpDelta)} XP` }
           );
+
+          if (outcome.drop?.type === 'gold') {
+            celebrate({ kind: 'drop', label: `Quái đánh rơi +${outcome.drop.amount} Gold!` });
+          } else if (outcome.drop?.type === 'shard') {
+            celebrate(
+              outcome.drop.freezeEarned
+                ? { kind: 'freeze', label: '+1 STREAK FREEZE!', sub: 'ghép đủ 3 mảnh băng ❄️' }
+                : {
+                    kind: 'freeze',
+                    label: `Mảnh băng +1`,
+                    sub: `${outcome.drop.shards}/${FREEZE_SHARDS_PER_FREEZE} mảnh — đủ 3 đổi 1 Freeze`
+                  }
+            );
+          }
+
+          // Duo: khép vòng hay đang chờ người kia?
+          if (habit.type === 'duo' && outcome.action === 'checked') {
+            celebrate(
+              outcome.duoCompleted
+                ? { kind: 'combo', label: '💞 DUO HOÀN THÀNH!', sub: 'cả hai cùng làm hôm nay — băng tan!' }
+                : { kind: 'checkin', label: 'Đã điểm danh phần mình', sub: 'chờ người ấy khép vòng 💌' }
+            );
+          }
         }
 
-        // Duo: khép vòng hay đang chờ người kia?
-        if (habit.type === 'duo' && outcome.action === 'checked') {
-          celebrate(
-            outcome.duoCompleted
-              ? { kind: 'combo', label: '💞 DUO HOÀN THÀNH!', sub: 'cả hai cùng làm hôm nay — băng tan!' }
-              : { kind: 'checkin', label: 'Đã điểm danh phần mình', sub: 'chờ người ấy khép vòng 💌' }
-          );
-        }
-
-        // Ngày Toàn Thắng: tất cả thói quen của mình hôm nay đã xử xong
+        // Ngày Toàn Thắng: tất cả thói quen của mình hôm nay đã xử xong (luôn hiện, kể cả từ battle scene)
         const allDone = myHabits.every(
           (h) =>
             h.id === habit.id ||
             isCheckedForActor(h.history || {}, h.type === 'duo', currentAssigneeId, todayKey)
         );
         if (allDone && myHabits.length > 1 && outcome.action === 'checked') {
-          confetti({
-            particleCount: 200,
-            spread: 100,
-            origin: { y: 0.6 },
-            colors: ['#f59e0b', '#6366f1', '#ec4899', '#10b981']
-          });
+          setTimeout(() => {
+            confetti({
+              particleCount: 200,
+              spread: 100,
+              origin: { y: 0.6 },
+              colors: ['#f59e0b', '#6366f1', '#ec4899', '#10b981']
+            });
+            celebrate({
+              kind: 'levelup',
+              label: 'NGÀY TOÀN THẮNG!',
+              sub: `Hạ gục cả ${myHabits.length} con quái hôm nay 🏆`
+            });
+          }, silent ? 1400 : 0);
+        }
+        return outcome;
+      } catch (e) {
+        if (!silent) {
           celebrate({
-            kind: 'levelup',
-            label: 'NGÀY TOÀN THẮNG!',
-            sub: `Hạ gục cả ${myHabits.length} con quái hôm nay 🏆`
+            kind: 'damage',
+            label: 'Đòn đánh trượt!',
+            sub: e instanceof Error ? e.message : 'Thử lại nhé'
           });
         }
-      } catch (e) {
-        celebrate({
-          kind: 'damage',
-          label: 'Đòn đánh trượt!',
-          sub: e instanceof Error ? e.message : 'Thử lại nhé'
-        });
+        throw e;
       }
     },
     [user, myHabits, patchUserData, currentAssigneeId]

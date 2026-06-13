@@ -3,7 +3,9 @@ import type { User } from 'firebase/auth';
 import { Swords, Trophy, Snowflake } from 'lucide-react';
 import HabitBattleCard from './HabitBattleCard';
 import HabitWizard from './HabitWizard';
+import HabitBattleScene from './HabitBattleScene';
 import BossBanner from './BossBanner';
+import type { Habit } from '../../services/habitService';
 import { useHabits } from '../../hooks/useHabits';
 import { useWeeklyBoss } from '../../hooks/useWeeklyBoss';
 import { getTodayKey, isCheckedForActor, daysSinceCreated } from '../../game/habitEngine';
@@ -25,6 +27,12 @@ export default function HabitsView({ user, userData, isDark, currentAssigneeId }
   } = useHabits(user, currentAssigneeId);
   const boss = useWeeklyBoss(user, currentAssigneeId);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [battlingHabit, setBattlingHabit] = useState<Habit | null>(null);
+
+  // Giữ tham chiếu habit mới nhất khi đang battle (để thanh máu/lịch sử cập nhật realtime)
+  const liveBattling = battlingHabit
+    ? myHabits.find((h) => h.id === battlingHabit.id) || battlingHabit
+    : null;
 
   const todayKey = getTodayKey();
   const doneToday = useMemo(
@@ -109,6 +117,7 @@ export default function HabitsView({ user, userData, isDark, currentAssigneeId }
               isOwner
               assigneeKey={currentAssigneeId}
               onCheck={checkIn}
+              onBattle={(h) => setBattlingHabit(h)}
               onArchive={(h) => archiveHabit(h.id)}
               onSeal={sealHabit}
             />
@@ -176,6 +185,17 @@ export default function HabitsView({ user, userData, isDark, currentAssigneeId }
         onClose={() => setIsWizardOpen(false)}
         onCreate={createHabit}
       />
+
+      {liveBattling && (
+        <HabitBattleScene
+          habit={liveBattling}
+          isDark={isDark}
+          assigneeKey={currentAssigneeId}
+          avatarConfig={userData.avatarConfig}
+          onCheck={checkIn}
+          onClose={() => setBattlingHabit(null)}
+        />
+      )}
     </div>
   );
 }

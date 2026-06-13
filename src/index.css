@@ -796,3 +796,14 @@ select option {
 .dark .cmdk-item[data-selected='true'] {
   color: rgb(165 180 252);
 }
+
+/* ===== BATTLE SCENE (Pokémon-style) ===== */
+.battle-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 36px 36px;
+  background-position: center;
+  -webkit-mask-image: radial-gradient(ellipse at 50% 40%, black 30%, transparent 75%);
+  mask-image: radial-gradient(ellipse at 50% 40%, black 30%, transparent 75%);
+}

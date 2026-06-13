@@ -27,12 +27,13 @@ interface HabitBattleCardProps {
   /** 'tit' | 'tun' của người đang xem — cần cho thói quen đôi */
   assigneeKey?: string | null;
   onCheck?: (habit: Habit, mode: 'done' | 'tiny') => void;
+  onBattle?: (habit: Habit) => void;
   onArchive?: (habit: Habit) => void;
   onSeal?: (habit: Habit) => void;
 }
 
 function HabitBattleCard({
-  habit, isDark, isOwner, assigneeKey = null, onCheck, onArchive, onSeal
+  habit, isDark, isOwner, assigneeKey = null, onCheck, onBattle, onArchive, onSeal
 }: HabitBattleCardProps): React.ReactElement {
   const todayKey = getTodayKey();
   const monster = getMonster(habit.monsterId);
@@ -171,15 +172,15 @@ function HabitBattleCard({
           <div className="flex flex-col items-center gap-1 shrink-0">
             <motion.button
               whileTap={{ scale: 0.85 }}
-              onClick={() => onCheck(habit, 'done')}
+              onClick={() => (onBattle ? onBattle(habit) : onCheck(habit, 'done'))}
               title={
                 myDone
-                  ? 'Bấm để hoàn tác'
+                  ? 'Xem lại trận đấu'
                   : isDuo
-                  ? `Điểm danh phần mình (-${damage} HP)`
-                  : `Tấn công! (-${damage} HP)`
+                  ? `Vào trận — điểm danh phần mình (-${damage} HP)`
+                  : `Vào trận đấu! (-${damage} HP)`
               }
-              aria-label={myDone ? 'Hoàn tác điểm danh' : 'Điểm danh hôm nay'}
+              aria-label={myDone ? 'Xem lại trận đấu' : 'Vào trận đấu'}
               className={`w-14 h-14 rounded-full flex items-center justify-center border-2 transition-all ${
                 defeated || todayValue === 'done'
                   ? 'bg-emerald-500 border-emerald-400 text-white shadow-lg shadow-emerald-500/40'
