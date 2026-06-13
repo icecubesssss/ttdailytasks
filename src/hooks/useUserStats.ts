@@ -15,6 +15,8 @@ import { computeTaskBaseReward, computeSubtaskReward } from '../game/rewardEngin
 import { celebrate } from '../game/celebrationStore';
 import { dealBossDamage } from '../services/weeklyBossService';
 import { BOSS_DMG_TASK, BOSS_DMG_TASK_LATE } from '../game/weeklyBoss';
+import { bossWeaknessOfDay, BOSS_WEAKNESS_MULTIPLIER } from '../game/battle';
+import { getTodayKey } from '../game/habitEngine';
 import { celebrateBossDefeat } from './useWeeklyBoss';
 
 const GIFTED_THEME_IDS = ['theme_sakura', 'theme_cyberpunk', 'theme_neon_night', 'theme_luxury_gold', 'theme_macos_26'];
@@ -303,10 +305,12 @@ export function useUserStats(user: User | null) {
       level: calculateLevel(finalXp).level
     });
 
-    // 3. Đòn đánh vào Boss Tuần (fire-and-forget)
+    // 3. Đòn đánh vào Boss Tuần (fire-and-forget) — gấp đôi nếu hôm nay boss yếu trước "task"
     const actorKey = getAssigneeIdByEmail(user.email);
     if (actorKey) {
-      dealBossDamage(actorKey, isLate ? BOSS_DMG_TASK_LATE : BOSS_DMG_TASK)
+      const weaknessMult = bossWeaknessOfDay(getTodayKey()) === 'task' ? BOSS_WEAKNESS_MULTIPLIER : 1;
+      const dmg = (isLate ? BOSS_DMG_TASK_LATE : BOSS_DMG_TASK) * weaknessMult;
+      dealBossDamage(actorKey, dmg)
         .then((res) => {
           if (res.justDefeated) celebrateBossDefeat(res.bossId);
         })
