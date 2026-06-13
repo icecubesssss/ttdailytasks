@@ -7,8 +7,17 @@
  * đạt ~80% sau 1 tháng, ~96% sau 2 tháng. Lỡ vài ngày chỉ tụt nhẹ, không về 0.
  */
 
-export type CheckValue = 'done' | 'tiny' | 'skip';
+/**
+ * 'done'/'tiny'/'skip' cho thói quen solo.
+ * 'tit'/'tun' cho thói quen ĐÔI: một người đã check, chờ người kia — đủ cả hai
+ * thì giá trị chuyển thành 'done'.
+ */
+export type CheckValue = 'done' | 'tiny' | 'skip' | 'tit' | 'tun';
 export type HabitHistory = Record<string, CheckValue>;
+
+/** Phong ấn: 66 ngày (nghiên cứu Lally) + độ thuần hóa đủ cao */
+export const SEAL_DAYS = 66;
+export const SEAL_AUTOMATICITY = 0.8;
 
 export interface HabitLike {
   history: HabitHistory;
@@ -39,6 +48,7 @@ export const getYesterdayKey = (now = Date.now()): string => getDayKey(now - DAY
 const checkScore = (value: CheckValue | undefined): number | null => {
   if (value === 'done') return 1;
   if (value === 'tiny') return 0.5; // đòn nhẹ: giữ vòng lặp sống, sức mạnh một nửa
+  if (value === 'tit' || value === 'tun') return 0.5; // duo mới 1 người check
   if (value === 'skip') return null; // ngày nghỉ chủ động: không cộng không trừ
   return 0; // bỏ lỡ
 };
@@ -96,13 +106,22 @@ export const computeHabitStreak = (history: HabitHistory, now = Date.now()): num
   for (;;) {
     const value = history[getDayKey(t)];
     if (value === 'done' || value === 'tiny') streak += 1;
-    else if (value === 'skip') {
-      // ngày nghỉ: không cộng nhưng không đứt
+    else if (value === 'skip' || value === 'tit' || value === 'tun') {
+      // ngày nghỉ / duo mới 1 người: không cộng nhưng không đứt
     } else break;
     t -= DAY_MS;
   }
   return streak;
 };
+
+/** Đủ điều kiện phong ấn: sống đủ 66 ngày + độ thuần hóa cao */
+export const isSealable = (habit: HabitLike, now = Date.now()): boolean =>
+  now - habit.createdAt >= SEAL_DAYS * DAY_MS &&
+  computeAutomaticity(habit, now) >= SEAL_AUTOMATICITY;
+
+/** Số ngày đã chiến đấu với quái */
+export const daysSinceCreated = (habit: HabitLike, now = Date.now()): number =>
+  Math.floor((now - habit.createdAt) / DAY_MS) + 1;
 
 /**
  * "Ngày Phục Thù" (never miss twice): hôm qua lỡ, hôm kia có làm,
@@ -132,3 +151,16 @@ export const lastNDays = (
 /** Chỉ cho điểm danh hôm nay hoặc hôm qua (chống backfill farm streak) */
 export const isCheckableDay = (dateKey: string, now = Date.now()): boolean =>
   dateKey === getDayKey(now) || dateKey === getYesterdayKey(now);
+
+/** Ngày này ĐÃ check đối với người này chưa (duo: phần mình hoặc cả hai) */
+export const isCheckedForActor = (
+  history: HabitHistory,
+  isDuo: boolean,
+  actorKey: string | null,
+  dateKey: string
+): boolean => {
+  const value = history[dateKey];
+  if (value === undefined) return false;
+  if (isDuo) return value === 'done' || value === actorKey;
+  return true;
+};

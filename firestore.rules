@@ -33,6 +33,11 @@ service cloud.firestore {
       allow write: if isSignedIn();
     }
 
+    match /artifacts/{appId}/public/data/weekly_boss/{weekKey} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
     match /shared_music/{docId} {
       allow read: if isSignedIn();
       allow write: if isSignedIn();

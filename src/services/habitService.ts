@@ -18,6 +18,8 @@ export interface Habit {
   /** 'tit' | 'tun' — đồng bộ với assigneeId của tasks */
   ownerId: string;
   createdByUid: string;
+  /** solo (mặc định) | duo — cả hai cùng check trong ngày mới trọn vẹn */
+  type?: 'solo' | 'duo';
   /** Đòn nhẹ 2 phút — phiên bản tối thiểu (BJ Fogg) */
   tinyVersion: string;
   /** Implementation intention: "Sau khi ___" */
@@ -25,6 +27,8 @@ export interface Habit {
   cueTime?: string;
   createdAt: number;
   archivedAt?: number;
+  /** Tốt nghiệp 66 ngày — quái bị phong ấn, vào Đền */
+  sealedAt?: number | null;
   history: HabitHistory;
   /** Ngày đã roll drop — chống toggle off/on để re-roll quà */
   dropsClaimed?: Record<string, boolean>;
@@ -40,6 +44,8 @@ export interface HabitCheckOutcome {
   xpDelta: number;
   goldDelta: number;
   drop?: HabitDrop;
+  /** Duo: đòn này khép vòng — cả hai đã check hôm nay 💞 */
+  duoCompleted?: boolean;
 }
 
 const habitsCol = () => collection(db, 'artifacts', appId, 'public', 'data', 'habits');
@@ -77,6 +83,10 @@ export const createHabit = async (
 export const archiveHabit = async (habitId: string): Promise<void> =>
   updateDoc(habitRef(habitId), { archivedAt: Date.now() });
 
+/** Phong ấn quái — thói quen tốt nghiệp, rời chiến trường vào Đền */
+export const sealHabit = async (habitId: string): Promise<void> =>
+  updateDoc(habitRef(habitId), { sealedAt: Date.now() });
+
 const rewardFor = (mode: 'done' | 'tiny') =>
   mode === 'done'
     ? { xp: HABIT_CHECKIN_XP, gold: HABIT_CHECKIN_GOLD }
@@ -91,7 +101,8 @@ export const checkInHabit = async (
   uid: string,
   habitId: string,
   dateKey: string,
-  mode: 'done' | 'tiny'
+  mode: 'done' | 'tiny',
+  actorKey?: 'tit' | 'tun'
 ): Promise<HabitCheckOutcome> => {
   if (!isCheckableDay(dateKey)) {
     throw new Error('Chỉ điểm danh được hôm nay hoặc hôm qua thôi nhé!');
@@ -113,7 +124,56 @@ export const checkInHabit = async (
     const dropsClaimed = { ...(habit.dropsClaimed || {}) };
     let outcome: HabitCheckOutcome;
 
-    if (existing === mode) {
+    // Roll drop ngẫu nhiên — chỉ hôm nay, mỗi claimKey 1 lần
+    // (solo: 1 lần/ngày/thói quen; duo: mỗi người 1 lượt riêng để người khép vòng vẫn có vía x2)
+    const rollDrop = (out: HabitCheckOutcome, chanceMultiplier = 1, claimKey = dateKey) => {
+      if (dateKey !== getTodayKey() || dropsClaimed[claimKey]) return;
+      dropsClaimed[claimKey] = true;
+      if (Math.random() >= HABIT_DROP_CHANCE * chanceMultiplier) return;
+      if (Math.random() < 0.6) {
+        const amount = 15 + Math.floor(Math.random() * 16); // 15..30 gold
+        out.drop = { type: 'gold', amount };
+        out.goldDelta += amount;
+      } else {
+        const shards = (stats.freezeShards || 0) + 1;
+        const freezeEarned = shards >= FREEZE_SHARDS_PER_FREEZE;
+        out.drop = {
+          type: 'shard',
+          shards: freezeEarned ? shards - FREEZE_SHARDS_PER_FREEZE : shards,
+          freezeEarned
+        };
+      }
+    };
+
+    if (habit.type === 'duo') {
+      // ── Thói quen ĐÔI: mỗi người nhận nửa thưởng khi check; đủ cả hai = 'done' ──
+      if (actorKey !== 'tit' && actorKey !== 'tun') {
+        throw new Error('Thiếu danh tính người điểm danh');
+      }
+      const partnerKey = actorKey === 'tit' ? 'tun' : 'tit';
+      const r = rewardFor('tiny');
+
+      if (existing === actorKey) {
+        delete history[dateKey];
+        outcome = { action: 'unchecked', mode: 'tiny', xpDelta: -r.xp, goldDelta: -r.gold };
+      } else if (existing === 'done') {
+        history[dateKey] = partnerKey;
+        // duoCompleted=true: cú toggle này phá vòng duo đã khép (để trừ đúng damage boss)
+        outcome = {
+          action: 'unchecked', mode: 'tiny', xpDelta: -r.xp, goldDelta: -r.gold, duoCompleted: true
+        };
+      } else if (existing === partnerKey) {
+        history[dateKey] = 'done';
+        outcome = {
+          action: 'checked', mode: 'tiny', xpDelta: r.xp, goldDelta: r.gold, duoCompleted: true
+        };
+        rollDrop(outcome, 2, `${dateKey}:${actorKey}`); // khép vòng duo: vía rơi đồ nhân đôi
+      } else {
+        history[dateKey] = actorKey;
+        outcome = { action: 'checked', mode: 'tiny', xpDelta: r.xp, goldDelta: r.gold };
+        rollDrop(outcome, 1, `${dateKey}:${actorKey}`);
+      }
+    } else if (existing === mode) {
       // Bỏ điểm danh: trừ lại đúng thưởng gốc (drop không bị thu hồi nhưng cũng không roll lại)
       const r = rewardFor(mode);
       delete history[dateKey];
@@ -134,26 +194,7 @@ export const checkInHabit = async (
       const r = rewardFor(mode);
       history[dateKey] = mode;
       outcome = { action: 'checked', mode, xpDelta: r.xp, goldDelta: r.gold };
-
-      // Drop ngẫu nhiên — chỉ hôm nay, chỉ 1 lần/ngày
-      if (dateKey === getTodayKey() && !dropsClaimed[dateKey]) {
-        dropsClaimed[dateKey] = true;
-        if (Math.random() < HABIT_DROP_CHANCE) {
-          if (Math.random() < 0.6) {
-            const amount = 15 + Math.floor(Math.random() * 16); // 15..30 gold
-            outcome.drop = { type: 'gold', amount };
-            outcome.goldDelta += amount;
-          } else {
-            const shards = (stats.freezeShards || 0) + 1;
-            const freezeEarned = shards >= FREEZE_SHARDS_PER_FREEZE;
-            outcome.drop = {
-              type: 'shard',
-              shards: freezeEarned ? shards - FREEZE_SHARDS_PER_FREEZE : shards,
-              freezeEarned
-            };
-          }
-        }
-      }
+      rollDrop(outcome);
     }
 
     transaction.update(habitRef(habitId), { history, dropsClaimed });

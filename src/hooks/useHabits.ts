@@ -5,9 +5,12 @@ import * as habitService from '../services/habitService';
 import type { Habit } from '../services/habitService';
 import { celebrate } from '../game/celebrationStore';
 import { getMonster, pickLine } from '../game/bestiary';
-import { getTodayKey, previewDamage } from '../game/habitEngine';
+import { getTodayKey, previewDamage, isCheckedForActor } from '../game/habitEngine';
 import { useAppStore } from '../store/useAppStore';
 import { MAX_ACTIVE_HABITS, FREEZE_SHARDS_PER_FREEZE } from '../utils/constants';
+import { dealBossDamage } from '../services/weeklyBossService';
+import { BOSS_DMG_HABIT, BOSS_DMG_DUO_COMPLETE } from '../game/weeklyBoss';
+import { celebrateBossDefeat } from './useWeeklyBoss';
 
 const ignoreAsyncError = (): undefined => undefined;
 
@@ -15,6 +18,7 @@ export interface UseHabitsReturn {
   habits: Habit[];
   myHabits: Habit[];
   partnerHabits: Habit[];
+  sealedHabits: Habit[];
   isLoaded: boolean;
   canCreateMore: boolean;
   checkIn: (habit: Habit, mode: 'done' | 'tiny') => Promise<void>;
@@ -22,6 +26,7 @@ export interface UseHabitsReturn {
     data: Omit<Habit, 'id' | 'createdAt' | 'history' | 'dropsClaimed' | 'ownerId' | 'createdByUid'>
   ) => Promise<void>;
   archiveHabit: (habitId: string) => Promise<void>;
+  sealHabit: (habit: Habit) => Promise<void>;
 }
 
 export function useHabits(user: User | null, currentAssigneeId: string | null): UseHabitsReturn {
@@ -41,13 +46,24 @@ export function useHabits(user: User | null, currentAssigneeId: string | null): 
     return () => unsubscribe();
   }, [user]);
 
+  // Duo habit hiện ở chiến trường của CẢ HAI; habit đã phong ấn vào Đền
   const myHabits = useMemo(
-    () => habits.filter((h) => h.ownerId === currentAssigneeId),
+    () =>
+      habits.filter(
+        (h) => !h.sealedAt && (h.ownerId === currentAssigneeId || h.type === 'duo')
+      ),
     [habits, currentAssigneeId]
   );
   const partnerHabits = useMemo(
-    () => habits.filter((h) => h.ownerId !== currentAssigneeId),
+    () =>
+      habits.filter(
+        (h) => !h.sealedAt && h.ownerId !== currentAssigneeId && h.type !== 'duo'
+      ),
     [habits, currentAssigneeId]
+  );
+  const sealedHabits = useMemo(
+    () => habits.filter((h) => Boolean(h.sealedAt)).sort((a, b) => (b.sealedAt || 0) - (a.sealedAt || 0)),
+    [habits]
   );
 
   const checkIn = useCallback(
@@ -58,7 +74,19 @@ export function useHabits(user: User | null, currentAssigneeId: string | null): 
       const damage = previewDamage(habit, mode);
 
       try {
-        const outcome = await habitService.checkInHabit(user.uid, habit.id, todayKey, mode);
+        const actorKey =
+          currentAssigneeId === 'tit' || currentAssigneeId === 'tun' ? currentAssigneeId : undefined;
+        const outcome = await habitService.checkInHabit(user.uid, habit.id, todayKey, mode, actorKey);
+
+        // Đòn này cũng trừ máu Boss Tuần (hoàn tác thì trả máu — chống farm toggle)
+        if (actorKey && outcome.action !== 'switched') {
+          const dmgBase = outcome.duoCompleted ? BOSS_DMG_DUO_COMPLETE : BOSS_DMG_HABIT;
+          dealBossDamage(actorKey, outcome.action === 'unchecked' ? -dmgBase : dmgBase)
+            .then((res) => {
+              if (res.justDefeated) celebrateBossDefeat(res.bossId);
+            })
+            .catch(ignoreAsyncError);
+        }
 
         // Cập nhật ví ngay cho "đã tay" (server snapshot sẽ xác nhận lại sau)
         const { userData } = useAppStore.getState();
@@ -105,9 +133,20 @@ export function useHabits(user: User | null, currentAssigneeId: string | null): 
           );
         }
 
+        // Duo: khép vòng hay đang chờ người kia?
+        if (habit.type === 'duo' && outcome.action === 'checked') {
+          celebrate(
+            outcome.duoCompleted
+              ? { kind: 'combo', label: '💞 DUO HOÀN THÀNH!', sub: 'cả hai cùng làm hôm nay — băng tan!' }
+              : { kind: 'checkin', label: 'Đã điểm danh phần mình', sub: 'chờ người ấy khép vòng 💌' }
+          );
+        }
+
         // Ngày Toàn Thắng: tất cả thói quen của mình hôm nay đã xử xong
         const allDone = myHabits.every(
-          (h) => h.id === habit.id || h.history?.[todayKey] !== undefined
+          (h) =>
+            h.id === habit.id ||
+            isCheckedForActor(h.history || {}, h.type === 'duo', currentAssigneeId, todayKey)
         );
         if (allDone && myHabits.length > 1 && outcome.action === 'checked') {
           confetti({
@@ -130,8 +169,24 @@ export function useHabits(user: User | null, currentAssigneeId: string | null): 
         });
       }
     },
-    [user, myHabits, patchUserData]
+    [user, myHabits, patchUserData, currentAssigneeId]
   );
+
+  const sealHabit = useCallback(async (habit: Habit) => {
+    const monster = getMonster(habit.monsterId);
+    await habitService.sealHabit(habit.id);
+    confetti({
+      particleCount: 220,
+      spread: 110,
+      origin: { y: 0.5 },
+      colors: ['#fbbf24', '#a78bfa', '#f472b6', '#34d399']
+    });
+    celebrate({
+      kind: 'levelup',
+      label: `PHONG ẤN ${monster.name.toUpperCase()}! 🔮`,
+      sub: `66 ngày bền bỉ — bạn đã trở thành ${monster.identity} ${monster.identityEmoji}`
+    });
+  }, []);
 
   const createHabit = useCallback(
     async (
@@ -166,10 +221,12 @@ export function useHabits(user: User | null, currentAssigneeId: string | null): 
     habits,
     myHabits,
     partnerHabits,
+    sealedHabits,
     isLoaded,
     canCreateMore: myHabits.length < MAX_ACTIVE_HABITS,
     checkIn,
     createHabit,
-    archiveHabit
+    archiveHabit,
+    sealHabit
   };
 }

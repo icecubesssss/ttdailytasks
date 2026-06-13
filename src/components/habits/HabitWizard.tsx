@@ -39,6 +39,7 @@ export default function HabitWizard({ open, isDark, onClose, onCreate }: HabitWi
   const [tinyVersion, setTinyVersion] = useState('');
   const [cueAfter, setCueAfter] = useState('');
   const [cueTime, setCueTime] = useState('');
+  const [habitType, setHabitType] = useState<'solo' | 'duo'>('solo');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!open) return null;
@@ -57,6 +58,7 @@ export default function HabitWizard({ open, isDark, onClose, onCreate }: HabitWi
     setTinyVersion('');
     setCueAfter('');
     setCueTime('');
+    setHabitType('solo');
   };
 
   const handleClose = () => {
@@ -72,6 +74,7 @@ export default function HabitWizard({ open, isDark, onClose, onCreate }: HabitWi
         title: title.trim(),
         emoji,
         monsterId,
+        type: habitType,
         tinyVersion: tinyVersion.trim(),
         cueAfter: cueAfter.trim() || undefined,
         cueTime: cueTime || undefined
@@ -120,7 +123,11 @@ export default function HabitWizard({ open, isDark, onClose, onCreate }: HabitWi
                   {BESTIARY.map((m) => (
                     <button
                       key={m.id}
-                      onClick={() => setMonsterId(m.id)}
+                      onClick={() => {
+                        setMonsterId(m.id);
+                        // Băng Nguội Lạnh là quái của cặp đôi — mặc định thói quen đôi
+                        if (m.id === 'bang_nguoi_lanh') setHabitType('duo');
+                      }}
                       className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all active:scale-95 ${
                         monsterId === m.id
                           ? 'border-indigo-500 bg-indigo-500/10 ring-2 ring-indigo-500/30'
@@ -190,6 +197,21 @@ export default function HabitWizard({ open, isDark, onClose, onCreate }: HabitWi
                     Ngày mệt rã rời, làm bản tí hon này vẫn giữ được chuỗi — vòng lặp không chết là thắng.
                   </p>
                 </div>
+                <button
+                  onClick={() => setHabitType(habitType === 'duo' ? 'solo' : 'duo')}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border text-xs font-black transition-all ${
+                    habitType === 'duo'
+                      ? 'border-fuchsia-500 bg-fuchsia-500/10 text-fuchsia-500 ring-2 ring-fuchsia-500/20'
+                      : isDark
+                      ? 'border-white/10 text-slate-400 hover:border-fuchsia-400/40'
+                      : 'border-slate-200 text-slate-500 hover:border-fuchsia-300'
+                  }`}
+                >
+                  <span>💞 Thói quen ĐÔI — cả hai cùng check mới trọn vẹn</span>
+                  <span className={`w-9 h-5 rounded-full p-0.5 transition-all ${habitType === 'duo' ? 'bg-fuchsia-500' : 'bg-slate-300 dark:bg-slate-700'}`}>
+                    <span className={`block w-4 h-4 rounded-full bg-white transition-transform ${habitType === 'duo' ? 'translate-x-4' : ''}`} />
+                  </span>
+                </button>
               </div>
             )}
 
@@ -214,6 +236,8 @@ export default function HabitWizard({ open, isDark, onClose, onCreate }: HabitWi
                     type="time"
                     value={cueTime}
                     onChange={(e) => setCueTime(e.target.value)}
+                    aria-label="Giờ nhắc"
+                    title="Giờ nhắc"
                     className={inputCls}
                   />
                 </div>

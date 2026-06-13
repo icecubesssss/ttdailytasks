@@ -3,10 +3,12 @@ import type { User } from 'firebase/auth';
 import { Swords, Trophy, Snowflake } from 'lucide-react';
 import HabitBattleCard from './HabitBattleCard';
 import HabitWizard from './HabitWizard';
+import BossBanner from './BossBanner';
 import { useHabits } from '../../hooks/useHabits';
-import { getTodayKey } from '../../game/habitEngine';
-import { FREEZE_SHARDS_PER_FREEZE } from '../../utils/constants';
-import { ASSIGNEES } from '../../utils/constants';
+import { useWeeklyBoss } from '../../hooks/useWeeklyBoss';
+import { getTodayKey, isCheckedForActor, daysSinceCreated } from '../../game/habitEngine';
+import { getMonster } from '../../game/bestiary';
+import { FREEZE_SHARDS_PER_FREEZE, ASSIGNEES } from '../../utils/constants';
 import type { UserData } from '../../utils/helpers';
 
 interface HabitsViewProps {
@@ -17,14 +19,20 @@ interface HabitsViewProps {
 }
 
 export default function HabitsView({ user, userData, isDark, currentAssigneeId }: HabitsViewProps): React.ReactElement {
-  const { myHabits, partnerHabits, isLoaded, canCreateMore, checkIn, createHabit, archiveHabit } =
-    useHabits(user, currentAssigneeId);
+  const {
+    myHabits, partnerHabits, sealedHabits, isLoaded, canCreateMore,
+    checkIn, createHabit, archiveHabit, sealHabit
+  } = useHabits(user, currentAssigneeId);
+  const boss = useWeeklyBoss(user, currentAssigneeId);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
 
   const todayKey = getTodayKey();
   const doneToday = useMemo(
-    () => myHabits.filter((h) => h.history?.[todayKey] !== undefined).length,
-    [myHabits, todayKey]
+    () =>
+      myHabits.filter((h) =>
+        isCheckedForActor(h.history || {}, h.type === 'duo', currentAssigneeId, todayKey)
+      ).length,
+    [myHabits, todayKey, currentAssigneeId]
   );
   const isPerfectDay = myHabits.length > 0 && doneToday === myHabits.length;
 
@@ -34,6 +42,9 @@ export default function HabitsView({ user, userData, isDark, currentAssigneeId }
 
   return (
     <div className="animate-fade-in-up">
+      {/* ── Boss Tuần ── */}
+      <BossBanner boss={boss} isDark={isDark} />
+
       {/* ── Header trận chiến ── */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <div>
@@ -96,8 +107,10 @@ export default function HabitsView({ user, userData, isDark, currentAssigneeId }
               habit={habit}
               isDark={isDark}
               isOwner
+              assigneeKey={currentAssigneeId}
               onCheck={checkIn}
               onArchive={(h) => archiveHabit(h.id)}
+              onSeal={sealHabit}
             />
           ))}
         </div>
@@ -113,6 +126,46 @@ export default function HabitsView({ user, userData, isDark, currentAssigneeId }
             {partnerHabits.map((habit) => (
               <HabitBattleCard key={habit.id} habit={habit} isDark={isDark} isOwner={false} />
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Đền Phong Ấn ── */}
+      {sealedHabits.length > 0 && (
+        <div className="mt-8">
+          <h3 className="text-sm font-black text-slate-400 uppercase tracking-wide mb-3">
+            🔮 Đền Phong Ấn — bảo tàng con người bạn đã trở thành
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
+            {sealedHabits.map((habit) => {
+              const monster = getMonster(habit.monsterId);
+              const ownerName =
+                ASSIGNEES[habit.ownerId as keyof typeof ASSIGNEES]?.name || '';
+              return (
+                <div
+                  key={habit.id}
+                  title={`${habit.title} — phong ấn ${habit.sealedAt ? new Date(habit.sealedAt).toLocaleDateString('vi-VN') : ''}`}
+                  className={`rounded-[1.5rem] border p-4 text-center ${
+                    isDark
+                      ? 'bg-gradient-to-b from-violet-950/40 to-slate-900/60 border-violet-500/20'
+                      : 'bg-gradient-to-b from-violet-50 to-white/70 border-violet-200/60'
+                  }`}
+                >
+                  <div className="relative inline-block">
+                    <span className="text-4xl grayscale opacity-70 select-none">{monster.emoji}</span>
+                    <span className="absolute -bottom-1 -right-2 text-lg">🔮</span>
+                  </div>
+                  <p className="font-black text-[11px] mt-2 truncate">{monster.name}</p>
+                  <p className="text-[9px] font-bold text-slate-400 truncate">{habit.emoji} {habit.title}</p>
+                  <p className="text-[9px] font-black text-violet-500 mt-1">
+                    {monster.identityEmoji} {ownerName} → {monster.identity}
+                  </p>
+                  <p className="text-[8px] font-bold text-slate-400 mt-0.5">
+                    {daysSinceCreated(habit, habit.sealedAt || Date.now())} ngày chiến đấu
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

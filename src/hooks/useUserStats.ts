@@ -13,6 +13,9 @@ import {
 import { useAppStore, defaultUserData } from '../store/useAppStore';
 import { computeTaskBaseReward, computeSubtaskReward } from '../game/rewardEngine';
 import { celebrate } from '../game/celebrationStore';
+import { dealBossDamage } from '../services/weeklyBossService';
+import { BOSS_DMG_TASK, BOSS_DMG_TASK_LATE } from '../game/weeklyBoss';
+import { celebrateBossDefeat } from './useWeeklyBoss';
 
 const GIFTED_THEME_IDS = ['theme_sakura', 'theme_cyberpunk', 'theme_neon_night', 'theme_luxury_gold', 'theme_macos_26'];
 
@@ -300,7 +303,17 @@ export function useUserStats(user: User | null) {
       level: calculateLevel(finalXp).level
     });
 
-    // 3. Celebration — phần thưởng phải "đã" ngay lập tức
+    // 3. Đòn đánh vào Boss Tuần (fire-and-forget)
+    const actorKey = getAssigneeIdByEmail(user.email);
+    if (actorKey) {
+      dealBossDamage(actorKey, isLate ? BOSS_DMG_TASK_LATE : BOSS_DMG_TASK)
+        .then((res) => {
+          if (res.justDefeated) celebrateBossDefeat(res.bossId);
+        })
+        .catch(ignoreAsyncError);
+    }
+
+    // 4. Celebration — phần thưởng phải "đã" ngay lập tức
     const isFirstCheckInToday = userData.lastCheckIn !== new Date().toDateString();
     celebrate(
       { kind: 'gold', label: `+${base.gold} Gold` },

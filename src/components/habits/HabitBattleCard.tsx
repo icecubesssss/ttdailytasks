@@ -5,8 +5,10 @@ import type { Habit } from '../../services/habitService';
 import { getMonster, pickLine, MONSTER_STAGES } from '../../game/bestiary';
 import {
   computeAutomaticity, monsterHpPercent, monsterStage, computeHabitStreak,
-  isRevengeDay, lastNDays, getTodayKey, previewDamage
+  isRevengeDay, lastNDays, getTodayKey, previewDamage,
+  isSealable, daysSinceCreated, isCheckedForActor
 } from '../../game/habitEngine';
+import { ASSIGNEES } from '../../utils/constants';
 
 const HP_BAR_COLORS: Record<string, string> = {
   rose: 'from-rose-500 to-rose-400',
@@ -22,15 +24,21 @@ interface HabitBattleCardProps {
   habit: Habit;
   isDark: boolean;
   isOwner: boolean;
+  /** 'tit' | 'tun' của người đang xem — cần cho thói quen đôi */
+  assigneeKey?: string | null;
   onCheck?: (habit: Habit, mode: 'done' | 'tiny') => void;
   onArchive?: (habit: Habit) => void;
+  onSeal?: (habit: Habit) => void;
 }
 
-function HabitBattleCard({ habit, isDark, isOwner, onCheck, onArchive }: HabitBattleCardProps): React.ReactElement {
+function HabitBattleCard({
+  habit, isDark, isOwner, assigneeKey = null, onCheck, onArchive, onSeal
+}: HabitBattleCardProps): React.ReactElement {
   const todayKey = getTodayKey();
   const monster = getMonster(habit.monsterId);
+  const isDuo = habit.type === 'duo';
 
-  const { auto, hp, stage, streak, revenge, todayValue, week, damage } = useMemo(() => {
+  const { auto, hp, stage, streak, revenge, todayValue, week, damage, sealable, days } = useMemo(() => {
     const auto = computeAutomaticity(habit);
     return {
       auto,
@@ -40,13 +48,27 @@ function HabitBattleCard({ habit, isDark, isOwner, onCheck, onArchive }: HabitBa
       revenge: isRevengeDay(habit.history || {}),
       todayValue: (habit.history || {})[todayKey],
       week: lastNDays(habit.history || {}, 7),
-      damage: previewDamage(habit, 'done')
+      damage: previewDamage(habit, isDuo ? 'tiny' : 'done'),
+      sealable: isSealable(habit),
+      days: daysSinceCreated(habit)
     };
-  }, [habit, todayKey]);
+  }, [habit, todayKey, isDuo]);
 
-  const defeated = todayValue === 'done' || todayValue === 'tiny';
+  const myDone = isCheckedForActor(habit.history || {}, isDuo, assigneeKey, todayKey);
+  // Quái chỉ "nằm" khi trận hôm nay trọn vẹn (duo cần đủ cả hai)
+  const defeated = isDuo ? todayValue === 'done' : todayValue === 'done' || todayValue === 'tiny';
+  const waitingPartner = isDuo && myDone && !defeated;
+  const missingKey = isDuo && (todayValue === 'tit' || todayValue === 'tun')
+    ? (todayValue === 'tit' ? 'tun' : 'tit')
+    : null;
+  const missingName = missingKey ? ASSIGNEES[missingKey as keyof typeof ASSIGNEES].name : '';
+
   const daySeed = new Date().getDate() + habit.id.length;
-  const line = defeated ? pickLine(monster.defeats, daySeed) : pickLine(monster.taunts, daySeed);
+  const line = defeated
+    ? pickLine(monster.defeats, daySeed)
+    : waitingPartner || missingKey
+    ? `Hê hê, ${missingName} chưa làm là chưa xong đâu nha~`
+    : pickLine(monster.taunts, daySeed);
   const stageInfo = MONSTER_STAGES[stage];
 
   return (
@@ -86,6 +108,11 @@ function HabitBattleCard({ habit, isDark, isOwner, onCheck, onArchive }: HabitBa
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-black text-sm truncate">{habit.emoji} {habit.title}</span>
+            {isDuo && (
+              <span className="px-2 py-0.5 rounded-full bg-fuchsia-500/10 border border-fuchsia-500/20 text-fuchsia-500 text-[9px] font-black">
+                💞 ĐÔI
+              </span>
+            )}
             {streak > 0 && (
               <span className="flex items-center gap-0.5 text-[10px] font-black text-orange-500">
                 <Flame size={11} className="fill-orange-500" /> {streak}
@@ -123,6 +150,8 @@ function HabitBattleCard({ habit, isDark, isOwner, onCheck, onArchive }: HabitBa
                     ? 'bg-emerald-500'
                     : d.value === 'tiny'
                     ? 'bg-emerald-300'
+                    : d.value === 'tit' || d.value === 'tun'
+                    ? 'bg-amber-400'
                     : d.value === 'skip'
                     ? 'bg-sky-300'
                     : d.isToday
@@ -143,19 +172,33 @@ function HabitBattleCard({ habit, isDark, isOwner, onCheck, onArchive }: HabitBa
             <motion.button
               whileTap={{ scale: 0.85 }}
               onClick={() => onCheck(habit, 'done')}
-              title={defeated ? 'Bấm để hoàn tác' : `Tấn công! (-${damage} HP)`}
-              aria-label={defeated ? 'Hoàn tác điểm danh' : 'Điểm danh hôm nay'}
+              title={
+                myDone
+                  ? 'Bấm để hoàn tác'
+                  : isDuo
+                  ? `Điểm danh phần mình (-${damage} HP)`
+                  : `Tấn công! (-${damage} HP)`
+              }
+              aria-label={myDone ? 'Hoàn tác điểm danh' : 'Điểm danh hôm nay'}
               className={`w-14 h-14 rounded-full flex items-center justify-center border-2 transition-all ${
-                todayValue === 'done'
+                defeated || todayValue === 'done'
                   ? 'bg-emerald-500 border-emerald-400 text-white shadow-lg shadow-emerald-500/40'
+                  : waitingPartner
+                  ? 'bg-fuchsia-100 border-fuchsia-300 text-fuchsia-600 dark:bg-fuchsia-500/20'
                   : todayValue === 'tiny'
                   ? 'bg-emerald-200 border-emerald-300 text-emerald-700'
                   : `${isDark ? 'border-slate-600 hover:border-indigo-400' : 'border-slate-300 hover:border-indigo-500'} hover:shadow-lg hover:shadow-indigo-500/20 hover:scale-105`
               }`}
             >
-              {defeated ? <span className="text-xl">✓</span> : <Swords size={22} className={revenge ? 'text-red-500' : 'text-indigo-500'} />}
+              {defeated ? (
+                <span className="text-xl">✓</span>
+              ) : waitingPartner ? (
+                <span className="text-xl">💌</span>
+              ) : (
+                <Swords size={22} className={revenge ? 'text-red-500' : 'text-indigo-500'} />
+              )}
             </motion.button>
-            {!defeated && (
+            {!defeated && !isDuo && !myDone && (
               <button
                 onClick={() => onCheck(habit, 'tiny')}
                 title={`Đòn nhẹ 2 phút: ${habit.tinyVersion}`}
@@ -167,6 +210,20 @@ function HabitBattleCard({ habit, isDark, isOwner, onCheck, onArchive }: HabitBa
           </div>
         )}
       </div>
+
+      {/* Đủ 66 ngày + thuần hóa cao → phong ấn */}
+      {isOwner && sealable && onSeal && (
+        <button
+          onClick={() => {
+            if (window.confirm(`Phong ấn ${monster.name}? "${habit.title}" tốt nghiệp sau ${days} ngày — quái vào Đền, bạn không cần điểm danh nữa! 🔮`)) {
+              onSeal(habit);
+            }
+          }}
+          className="w-full mt-3 py-2.5 rounded-2xl font-black text-xs bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-amber-950 shadow-lg shadow-amber-500/40 hover:shadow-amber-500/60 active:scale-95 transition-all animate-pulse"
+        >
+          🔮 PHONG ẤN {monster.name.toUpperCase()} — {days} ngày, quái đã bị thuần hóa!
+        </button>
+      )}
 
       {/* Đòn nhẹ là gì + cue + nút xóa */}
       {isOwner && (
