@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   ShoppingBag,
   StickyNote,
+  Swords,
 } from 'lucide-react';
 
 export interface NavTab {
@@ -26,6 +27,12 @@ export const NAV_TABS: NavTab[] = [
     label: 'Lịch',
     icon: <CalendarDays size={20} />,
     activeColor: 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30',
+  },
+  {
+    id: 'habits',
+    label: 'Quái Thú',
+    icon: <Swords size={20} />,
+    activeColor: 'bg-rose-600 text-white shadow-lg shadow-rose-500/30',
   },
   {
     id: 'stats',

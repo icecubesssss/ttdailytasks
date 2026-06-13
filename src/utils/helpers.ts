@@ -66,6 +66,8 @@ export interface UserData {
   lastCheckIn: string | null;
   streak: number;
   streakFreezes: number;
+  /** Mảnh băng rơi từ quái — gom đủ FREEZE_SHARDS_PER_FREEZE đổi 1 Streak Freeze */
+  freezeShards?: number;
   unlockedBadgeIds: string[];
   lastSeenLevel: number;
   ownedItemIds: string[];

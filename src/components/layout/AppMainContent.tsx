@@ -9,6 +9,7 @@ import type { User } from 'firebase/auth';
 
 const CalendarView = lazy(() => import('../calendar/CalendarView'));
 const Dashboard = lazy(() => import('./Dashboard'));
+const HabitsView = lazy(() => import('../habits/HabitsView'));
 
 interface CalendarViewProps {
   isDark: boolean;
@@ -153,6 +154,23 @@ function AppMainContent({
       {activeTab === 'note' ? (
         <div key="note">
           <QuickNote userData={userData} onUpdateSettings={handleUpdateSettings} />
+        </div>
+      ) : activeTab === 'habits' ? (
+        <div key="habits">
+          <LazyErrorBoundary>
+            <Suspense
+              fallback={
+                <div className="p-6 text-xs font-black text-slate-400">Đang dò la quái vật…</div>
+              }
+            >
+              <HabitsView
+                user={user}
+                userData={userData}
+                isDark={isDark}
+                currentAssigneeId={currentAssigneeId}
+              />
+            </Suspense>
+          </LazyErrorBoundary>
         </div>
       ) : activeTab === 'tasks' || activeTab === 'calendar' ? (
         <div key="main-tasks">

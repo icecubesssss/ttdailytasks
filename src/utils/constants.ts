@@ -7,6 +7,15 @@ export const GOLD_PER_TASK = 50;
 export const GOLD_PER_SUBTASK = 10;
 export const DAILY_CHECKIN_GOLD = 50;
 
+// ── Thói quen (đánh quái) — thưởng nhỏ hơn task để không lạm phát kinh tế ──
+export const HABIT_CHECKIN_XP = 5;
+export const HABIT_CHECKIN_GOLD = 10;
+export const HABIT_TINY_XP = 2;
+export const HABIT_TINY_GOLD = 5;
+export const HABIT_DROP_CHANCE = 0.12;
+export const FREEZE_SHARDS_PER_FREEZE = 3;
+export const MAX_ACTIVE_HABITS = 10;
+
 export const BOOSTER_DURATIONS = {
   xp: 2 * 60 * 60 * 1000,   // 2 hours
   gold: 1 * 60 * 60 * 1000  // 1 hour
