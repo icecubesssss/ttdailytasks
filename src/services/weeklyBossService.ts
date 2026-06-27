@@ -1,5 +1,4 @@
-import { db, appId } from '../firebase';
-import { doc, onSnapshot, runTransaction, Unsubscribe } from 'firebase/firestore';
+import { supabase } from '../supabase';
 import { UserData, calculateLevel } from '../utils/helpers';
 import {
   getWeekKey, pickBossForWeek, WEEKLY_BOSS_MAX_HP, WEEKLY_BOSS_REWARD_GOLD
@@ -9,17 +8,10 @@ export interface WeeklyBossDoc {
   weekKey: string;
   bossId: string;
   maxHp: number;
-  /** Sát thương từng người: { tit: 12, tun: 9 } */
   damage: Record<string, number>;
   defeatedAt: number | null;
-  /** Ai đã nhận pot vàng */
   claimed: Record<string, boolean>;
 }
-
-const bossRef = (weekKey: string) =>
-  doc(db, 'artifacts', appId, 'public', 'data', 'weekly_boss', weekKey);
-const statsRef = (uid: string) =>
-  doc(db, 'artifacts', appId, 'users', uid, 'profile', 'stats');
 
 const freshBossDoc = (weekKey: string): WeeklyBossDoc => ({
   weekKey,
@@ -33,12 +25,55 @@ const freshBossDoc = (weekKey: string): WeeklyBossDoc => ({
 export const subscribeToWeeklyBoss = (
   callback: (boss: WeeklyBossDoc | null) => void,
   onError?: (e: unknown) => void
-): Unsubscribe =>
-  onSnapshot(
-    bossRef(getWeekKey()),
-    (snap) => callback(snap.exists() ? (snap.data() as WeeklyBossDoc) : null),
-    (e) => onError?.(e)
-  );
+) => {
+  const weekKey = getWeekKey();
+  
+  supabase
+    .from('weekly_boss')
+    .select('*')
+    .eq('week_key', weekKey)
+    .single()
+    .then(({ data, error }) => {
+      if (error && error.code !== 'PGRST116') {
+        if (onError) onError(error);
+        return;
+      }
+      if (data) {
+        callback({
+          weekKey: data.week_key,
+          bossId: data.boss_id,
+          maxHp: data.max_hp,
+          damage: data.damage || {},
+          defeatedAt: data.defeated_at,
+          claimed: data.claimed || {}
+        });
+      } else {
+        callback(null);
+      }
+    });
+
+  const channel = supabase.channel(`public:weekly_boss:week_key=eq.${weekKey}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'weekly_boss', filter: `week_key=eq.${weekKey}` }, (payload: any) => {
+      const data = payload.new;
+      if (data) {
+        callback({
+          weekKey: data.week_key,
+          bossId: data.boss_id,
+          maxHp: data.max_hp,
+          damage: data.damage || {},
+          defeatedAt: data.defeated_at,
+          claimed: data.claimed || {}
+        });
+      } else {
+        callback(null);
+      }
+    })
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+};
 
 export interface BossDamageResult {
   justDefeated: boolean;
@@ -46,60 +81,58 @@ export interface BossDamageResult {
   bossId: string;
 }
 
-/**
- * Trừ máu boss tuần (fire-and-forget từ task/habit). Tự tạo doc tuần nếu chưa có.
- * amount âm = hoàn tác (bỏ điểm danh) để không farm damage bằng toggle.
- * Trả về justDefeated=true đúng 1 lần — lúc cú đánh này hạ gục boss.
- */
-export const dealBossDamage = async (
-  actorKey: string,
-  amount: number
-): Promise<BossDamageResult> => {
+export const dealBossDamage = async (actorKey: string, amount: number): Promise<{ justDefeated: boolean, totalDamage: number, bossId: string }> => {
   const weekKey = getWeekKey();
-  return await runTransaction(db, async (transaction) => {
-    const snap = await transaction.get(bossRef(weekKey));
-    const boss = snap.exists() ? (snap.data() as WeeklyBossDoc) : freshBossDoc(weekKey);
-
-    const wasDefeated = Boolean(boss.defeatedAt);
-    const damage = {
-      ...boss.damage,
-      [actorKey]: Math.max(0, (boss.damage[actorKey] || 0) + amount)
-    };
-    const totalDamage = Object.values(damage).reduce((a, b) => a + b, 0);
-    const justDefeated = !wasDefeated && totalDamage >= boss.maxHp;
-
-    transaction.set(bossRef(weekKey), {
-      ...boss,
-      damage,
-      defeatedAt: justDefeated ? Date.now() : boss.defeatedAt
-    });
-
-    return { justDefeated, totalDamage, bossId: boss.bossId };
+  
+  const { data, error } = await supabase.rpc('deal_boss_damage_rpc', {
+    p_week_key: weekKey,
+    p_actor_key: actorKey,
+    p_amount: amount,
+    p_now: Date.now()
   });
+
+  if (error) {
+    console.error('Lỗi khi đánh boss:', error);
+    throw error;
+  }
+
+  return data as { justDefeated: boolean, totalDamage: number, bossId: string };
 };
 
-/** Nhận pot vàng sau khi hạ boss — mỗi người 1 lần/tuần */
 export const claimBossReward = async (uid: string, actorKey: string): Promise<number> => {
   const weekKey = getWeekKey();
-  return await runTransaction(db, async (transaction) => {
-    const bossSnap = await transaction.get(bossRef(weekKey));
-    const statsSnap = await transaction.get(statsRef(uid));
-    if (!bossSnap.exists()) throw new Error('Tuần này chưa có boss');
-    if (!statsSnap.exists()) throw new Error('User stats not found');
+  
+  const [ { data: bossData, error: bossErr }, { data: statsData, error: statsErr } ] = await Promise.all([
+    supabase.from('weekly_boss').select('*').eq('week_key', weekKey).single(),
+    supabase.from('user_stats').select('*').eq('uid', uid).single()
+  ]);
 
-    const boss = bossSnap.data() as WeeklyBossDoc;
-    if (!boss.defeatedAt) throw new Error('Boss còn sống nhăn răng kìa!');
-    if (boss.claimed?.[actorKey]) throw new Error('Bạn nhận thưởng tuần này rồi mà~');
+  if (bossErr || !bossData) throw new Error('Tuần này chưa có boss');
+  if (statsErr || !statsData) throw new Error('User stats not found');
 
-    const stats = statsSnap.data() as UserData;
-    const finalGold = (stats.ttGold || 0) + WEEKLY_BOSS_REWARD_GOLD;
+  const boss = {
+    weekKey: bossData.week_key,
+    bossId: bossData.boss_id,
+    maxHp: bossData.max_hp,
+    damage: bossData.damage || {},
+    defeatedAt: bossData.defeated_at,
+    claimed: bossData.claimed || {}
+  };
 
-    transaction.update(bossRef(weekKey), { claimed: { ...boss.claimed, [actorKey]: true } });
-    transaction.update(statsRef(uid), {
-      ttGold: finalGold,
-      level: calculateLevel(stats.xp || 0).level
-    });
+  if (!boss.defeatedAt) throw new Error('Boss còn sống nhăn răng kìa!');
+  if (boss.claimed?.[actorKey]) throw new Error('Bạn nhận thưởng tuần này rồi mà~');
 
-    return WEEKLY_BOSS_REWARD_GOLD;
-  });
+  const finalGold = (statsData.gold || 0) + WEEKLY_BOSS_REWARD_GOLD;
+
+  const newClaimed = { ...boss.claimed, [actorKey]: true };
+  
+  await Promise.all([
+    supabase.from('weekly_boss').update({ claimed: newClaimed }).eq('week_key', weekKey),
+    supabase.from('user_stats').update({
+      gold: finalGold,
+      level: calculateLevel(statsData.xp || 0).level
+    }).eq('uid', uid)
+  ]);
+
+  return WEEKLY_BOSS_REWARD_GOLD;
 };

@@ -2,10 +2,7 @@ import { useCallback, useState } from 'react';
 import confetti from 'canvas-confetti';
 import * as taskService from '../services/taskService';
 import * as aiService from '../services/aiService';
-import type { Task, SubTask } from '../utils/helpers';
-import type { User } from 'firebase/auth';
-import type { UserData } from '../utils/helpers';
-import { getAssigneeIdByEmail } from '../utils/helpers';
+import type { Task, SubTask, UserData, AppUser as User } from '../utils/helpers';
 import { countComboToday } from '../game/rewardEngine';
 
 interface TaskActionParams {
@@ -125,7 +122,7 @@ export const useTaskActions = ({
         }
 
         // Combo trong ngày: đếm các task mình đã hoàn thành hôm nay
-        const myAssignee = getAssigneeIdByEmail(user?.email);
+        const myAssignee = user?.uid;
         const comboCount = countComboToday(
           tasks
             .filter(

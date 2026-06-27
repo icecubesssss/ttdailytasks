@@ -1,8 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Flame, Swords, Trash2 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import type { Habit } from '../../services/habitService';
 import { getMonster, pickLine, MONSTER_STAGES } from '../../game/bestiary';
+import HabitBattleScene from './HabitBattleScene';
 import {
   computeAutomaticity, monsterHpPercent, monsterStage, computeHabitStreak,
   isRevengeDay, lastNDays, getTodayKey, previewDamage,
@@ -27,14 +29,16 @@ interface HabitBattleCardProps {
   /** 'tit' | 'tun' của người đang xem — cần cho thói quen đôi */
   assigneeKey?: string | null;
   onCheck?: (habit: Habit, mode: 'done' | 'tiny') => void;
-  onBattle?: (habit: Habit) => void;
   onArchive?: (habit: Habit) => void;
   onSeal?: (habit: Habit) => void;
 }
 
 function HabitBattleCard({
-  habit, isDark, isOwner, assigneeKey = null, onCheck, onBattle, onArchive, onSeal
+  habit, isDark, isOwner, assigneeKey = null, onCheck, onArchive, onSeal
 }: HabitBattleCardProps): React.ReactElement {
+  const [isBattling, setIsBattling] = React.useState(false);
+  const [battleMode, setBattleMode] = React.useState<'done' | 'tiny'>('done');
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const todayKey = getTodayKey();
   const monster = getMonster(habit.monsterId);
   const isDuo = habit.type === 'duo';
@@ -72,6 +76,33 @@ function HabitBattleCard({
     : pickLine(monster.taunts, daySeed);
   const stageInfo = MONSTER_STAGES[stage];
 
+  const handleCheckIn = (mode: 'done' | 'tiny') => {
+    if (!onCheck) return;
+    
+    // Hiệu ứng ăn điểm / chém quái
+    const rect = buttonRef.current?.getBoundingClientRect();
+    const origin = rect 
+      ? { x: (rect.left + rect.width / 2) / window.innerWidth, y: (rect.top + rect.height / 2) / window.innerHeight }
+      : { x: 0.5, y: 0.5 };
+
+    confetti({
+      particleCount: 40,
+      spread: 70,
+      origin,
+      colors: ['#10b981', '#3b82f6', '#f43f5e', '#fbbf24'],
+      ticks: 120,
+      gravity: 1.2,
+      scalar: 0.8
+    });
+
+    onCheck(habit, mode);
+  };
+
+  const handleOpenBattle = (mode: 'done' | 'tiny') => {
+    setBattleMode(mode);
+    setIsBattling(true);
+  };
+
   return (
     <div
       className={`relative rounded-[1.75rem] border p-4 transition-all ${
@@ -90,18 +121,24 @@ function HabitBattleCard({
           className="relative w-16 shrink-0 text-center select-none"
           animate={
             defeated
-              ? { rotate: 90, scale: 0.8, opacity: 0.55 }
+              ? { rotate: 90, scale: 0.8, opacity: 0.55, y: 10 }
               : stage === 0
-              ? { rotate: [0, -7, 7, 0], scale: [1, 1.06, 1] }
+              ? { rotate: [0, -10, 10, 0], scale: [1, 1.1, 1], y: [0, -5, 0] }
               : stage === 3
-              ? { y: [0, 2, 0], scale: 0.95 }
-              : { y: [0, -2, 0] }
+              ? { y: [0, 4, 0], scale: [1, 0.9, 1] }
+              : { y: [0, -6, 0], scale: [1, 1.03, 1] }
           }
-          transition={defeated ? { duration: 0.4 } : { duration: stage === 0 ? 1.1 : 2.2, repeat: Infinity }}
+          transition={{
+            duration: stage === 0 ? 0.6 : stage === 3 ? 2 : 1.2,
+            repeat: defeated ? 0 : Infinity,
+            ease: 'easeInOut'
+          }}
         >
-          <span className={`${stageInfo.scale} ${defeated ? 'grayscale' : ''} inline-block`}>
-            {monster.emoji}
-          </span>
+          <img 
+            src={monster.imageUrl} 
+            alt={monster.name} 
+            className={`w-14 h-14 object-contain ${stageInfo.scale} ${defeated ? 'grayscale' : ''} transition-transform duration-500`}
+          />
           {defeated && <span className="absolute -top-1 -right-1 text-lg">💫</span>}
         </motion.div>
 
@@ -171,8 +208,15 @@ function HabitBattleCard({
         {isOwner && onCheck && (
           <div className="flex flex-col items-center gap-1 shrink-0">
             <motion.button
+              ref={buttonRef}
               whileTap={{ scale: 0.85 }}
-              onClick={() => (onBattle ? onBattle(habit) : onCheck(habit, 'done'))}
+              onClick={() => {
+                if (defeated || todayValue === 'done' || waitingPartner) {
+                  // No battle
+                } else {
+                  handleOpenBattle('done');
+                }
+              }}
               title={
                 myDone
                   ? 'Xem lại trận đấu'
@@ -201,7 +245,7 @@ function HabitBattleCard({
             </motion.button>
             {!defeated && !isDuo && !myDone && (
               <button
-                onClick={() => onCheck(habit, 'tiny')}
+                onClick={() => handleOpenBattle('tiny')}
                 title={`Đòn nhẹ 2 phút: ${habit.tinyVersion}`}
                 className="text-[9px] font-black text-slate-400 hover:text-indigo-500 transition-colors"
               >
@@ -249,6 +293,16 @@ function HabitBattleCard({
             </button>
           )}
         </div>
+      )}
+
+      {isBattling && (
+        <HabitBattleScene 
+          habit={habit} 
+          mode={battleMode}
+          isDark={isDark} 
+          onCheck={(mode) => handleCheckIn(mode)} 
+          onClose={() => setIsBattling(false)} 
+        />
       )}
     </div>
   );

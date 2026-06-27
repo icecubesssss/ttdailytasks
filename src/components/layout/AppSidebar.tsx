@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { User } from 'firebase/auth';
+import type { AppUser as User } from '../../utils/helpers';
 import { motion } from 'framer-motion';
 import {
   Moon, Sun, Sparkles, Snowflake, Search,
@@ -7,8 +7,7 @@ import {
 } from 'lucide-react';
 import { NAV_TABS } from './navConfig';
 import StreakCalendar from '../stats/StreakCalendar';
-import { getAssigneeIdByEmail, getAvatarUrl } from '../../utils/helpers';
-import { DEFAULT_AVATARS } from '../../utils/constants';
+import { getAvatarUrl, getDefaultAvatar } from '../../utils/helpers';
 import type { UserData, TeamMember } from '../../utils/helpers';
 
 interface AppSidebarProps {
@@ -116,7 +115,7 @@ function AppSidebar({
                 <img
                   src={getAvatarUrl(
                     member.avatarConfig ||
-                      DEFAULT_AVATARS[getAssigneeIdByEmail(member.email || '') || ''] ||
+                      getDefaultAvatar(member.email) ||
                       {}
                   )}
                   className={`w-9 h-9 rounded-full border-2 shadow-md ${

@@ -1,4 +1,4 @@
-import { geminiApiKey } from '../firebase';
+import { geminiApiKey } from '../config';
 
 const AI_CACHE_TTL_MS = 10 * 60 * 1000;
 

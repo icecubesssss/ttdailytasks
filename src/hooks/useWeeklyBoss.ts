@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import confetti from 'canvas-confetti';
-import type { User } from 'firebase/auth';
+import type { AppUser as User } from '../utils/helpers';
 import * as weeklyBossService from '../services/weeklyBossService';
 import type { WeeklyBossDoc } from '../services/weeklyBossService';
 import {
@@ -41,7 +41,7 @@ export interface UseWeeklyBossReturn {
   claim: () => Promise<void>;
 }
 
-export function useWeeklyBoss(user: User | null, currentAssigneeId: string | null): UseWeeklyBossReturn {
+export function useWeeklyBoss(user: User | null, playerSlug: string | null): UseWeeklyBossReturn {
   const [bossDoc, setBossDoc] = useState<WeeklyBossDoc | null>(null);
   const patchUserData = useAppStore((s) => s.patchUserData);
 
@@ -61,12 +61,12 @@ export function useWeeklyBoss(user: User | null, currentAssigneeId: string | nul
   );
   const hpLeft = Math.max(0, maxHp - totalDamage);
   const defeated = Boolean(bossDoc?.defeatedAt);
-  const myClaimed = Boolean(currentAssigneeId && bossDoc?.claimed?.[currentAssigneeId]);
+  const myClaimed = Boolean(playerSlug && bossDoc?.claimed?.[playerSlug]);
 
   const claim = useCallback(async () => {
-    if (!user || user.uid === 'local-user-test' || !currentAssigneeId) return;
+    if (!user || user.uid === 'local-user-test' || !playerSlug) return;
     try {
-      const gold = await weeklyBossService.claimBossReward(user.uid, currentAssigneeId);
+      const gold = await weeklyBossService.claimBossReward(user.uid, playerSlug);
       const { userData } = useAppStore.getState();
       patchUserData({ ttGold: (userData.ttGold || 0) + gold });
       confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#f59e0b', '#fbbf24'] });
@@ -78,7 +78,7 @@ export function useWeeklyBoss(user: User | null, currentAssigneeId: string | nul
         sub: e instanceof Error ? e.message : 'Thử lại nhé'
       });
     }
-  }, [user, currentAssigneeId, patchUserData, bossInfo.name]);
+  }, [user, playerSlug, patchUserData, bossInfo.name]);
 
   return {
     bossInfo,

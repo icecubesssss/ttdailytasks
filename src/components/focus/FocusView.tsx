@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Zap, ListTree, Pause, CheckCircle2, Music, ListMusic, Play, Flame, Settings2, RotateCcw, Timer, Clock, StickyNote } from 'lucide-react';
-import { formatDuration, getAvatarUrl, getAssigneeIdByEmail, Task, UserData, TeamMember, AvatarConfig } from '../../utils/helpers';
-import { DEFAULT_AVATARS } from '../../utils/constants';
+import { formatDuration, getAvatarUrl, getDefaultAvatar, Task, UserData, TeamMember, AvatarConfig } from '../../utils/helpers';
 import MusicSidebar from '../layout/MusicSidebar';
 import MixerSidebar from '../layout/MixerSidebar';
 import { useFocusMusic } from '../../hooks/useFocusMusic';
@@ -65,7 +64,6 @@ export default function FocusView({
     isMuted,
     setIsMuted,
     isCaching,
-    cachedIds,
     uploadProgress,
     handleFileUpload,
     handleDeleteTrack,
@@ -161,7 +159,7 @@ export default function FocusView({
         {partnerTask && partnerInfo && (
           <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20">
             <div className="relative">
-              <img src={getAvatarUrl(partnerInfo.avatarConfig || (getAssigneeIdByEmail(partnerInfo.email) ? DEFAULT_AVATARS[getAssigneeIdByEmail(partnerInfo.email)!] : undefined) || {})} alt={partnerInfo.displayName} className="w-6 h-6 rounded-full border border-white/50" />
+              <img src={getAvatarUrl(partnerInfo.avatarConfig || getDefaultAvatar(partnerInfo.email) || {})} alt={partnerInfo.displayName} className="w-6 h-6 rounded-full border border-white/50" />
               <div className="absolute -bottom-0.5 -right-0.5"><Flame size={10} className="text-orange-500 animate-pulse" fill="currentColor"/></div>
             </div>
             <div className="flex flex-col">
@@ -290,8 +288,6 @@ export default function FocusView({
         tracks={tracks}
         currentTrackIdx={currentTrackIdx}
         onSelectTrack={setCurrentTrackIdx}
-        cachedIds={cachedIds}
-        totalTracks={tracks.length}
         onFileUpload={handleFileUpload}
         onAddViaUrl={handleAddViaUrl}
         onDeleteTrack={handleDeleteTrack}

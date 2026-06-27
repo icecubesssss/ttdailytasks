@@ -1,12 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { collection, onSnapshot, addDoc, deleteDoc, doc, query, orderBy, Unsubscribe } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { db, storage, appsScriptUrl } from '../firebase';
+import { supabase } from '../supabase';
+import { appsScriptUrl } from '../config';
 import { musicStore } from '../utils/musicStore';
 import { useAppStore } from '../store/useAppStore';
 import { UserData } from '../utils/helpers';
 
-// Singleton Audio instance to persist across hook re-mounts
 const globalAudio = new Audio();
 
 export interface MusicTrackData {
@@ -21,19 +19,6 @@ export interface MusicTrackData {
   isCustom?: boolean;
   createdAt: string;
   uploadedBy: string;
-}
-
-interface FirestoreMusicTrack {
-  mood?: string;
-  title?: string;
-  artist?: string;
-  cover?: string;
-  url?: string;
-  storagePath?: string;
-  driveId?: string;
-  isCustom?: boolean;
-  createdAt?: string;
-  uploadedBy?: string;
 }
 
 export interface UseFocusMusicReturn {
@@ -96,36 +81,43 @@ export function useFocusMusic(userData: UserData): UseFocusMusicReturn {
 
   // --- Load Shared Music ---
   useEffect(() => {
-    const q = query(collection(db, 'shared_music'), orderBy('createdAt', 'desc'));
-    const unsubscribe: Unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const nextTracks = snapshot.docs
-          .map((snap): MusicTrackData | null => {
-            const data = snap.data() as FirestoreMusicTrack;
-            if (!data.title || !data.url) return null;
-            return {
-              id: snap.id,
-              title: data.title,
-              url: data.url,
-              mood: data.mood,
-              artist: data.artist,
-              cover: data.cover,
-              storagePath: data.storagePath,
-              driveId: data.driveId,
-              isCustom: data.isCustom,
-              createdAt: data.createdAt || new Date(0).toISOString(),
-              uploadedBy: data.uploadedBy || 'unknown'
-            };
-          })
-          .filter((track): track is MusicTrackData => Boolean(track));
-        setCustomTracks(nextTracks);
-      },
-      (error) => {
+    const fetchMusic = async () => {
+      const { data, error } = await supabase
+        .from('shared_music')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
         console.error('[FocusMusic] Không đọc được shared_music:', error);
+        return;
       }
-    );
-    return () => unsubscribe();
+      if (data) {
+        const nextTracks = data.map(d => ({
+          id: d.id,
+          mood: d.mood,
+          title: d.title,
+          artist: d.artist,
+          cover: d.cover,
+          url: d.url,
+          storagePath: d.storage_path,
+          driveId: d.drive_id,
+          isCustom: d.is_custom,
+          createdAt: d.created_at || new Date(0).toISOString(),
+          uploadedBy: d.uploaded_by || 'unknown'
+        } as MusicTrackData));
+        setCustomTracks(nextTracks);
+      }
+    };
+    
+    fetchMusic();
+
+    const channel = supabase.channel('public:shared_music')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'shared_music' }, () => {
+        fetchMusic();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   const tracks = customTracks;
@@ -137,41 +129,6 @@ export function useFocusMusic(userData: UserData): UseFocusMusicReturn {
       setMusicState({ currentTrackIdx: 0 });
     }
   }, [tracks.length, currentTrackIdx, setMusicState]);
-
-  // --- Migration Logic ---
-  useEffect(() => {
-    const migrate = async () => {
-      try {
-        const localMetadata = await musicStore.getAllMetadata();
-        if (localMetadata?.length > 0) {
-          for (const track of localMetadata) {
-            if (track.url === 'local') {
-              const fullTrack = await musicStore.getTrack(track.id);
-              if (fullTrack?.blob) {
-                const fileName = `migration-${Date.now()}-${track.title}.mp3`;
-                const storageRef = ref(storage, `music/${fileName}`);
-                const uploadResult = await uploadBytes(storageRef, fullTrack.blob);
-                const downloadUrl = await getDownloadURL(uploadResult.ref);
-                await addDoc(collection(db, 'shared_music'), {
-                  mood: track.mood || 'lofi',
-                  title: track.title,
-                  artist: 'Migrated Upload',
-                  cover: track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=400&fit=crop',
-                  url: downloadUrl,
-                  storagePath: `music/${fileName}`,
-                  isCustom: true,
-                  createdAt: new Date().toISOString(),
-                  uploadedBy: userData.uid || 'migration'
-                });
-              }
-              await musicStore.deleteTrack(track.id);
-            }
-          }
-        }
-      } catch (err) { console.error('Migration failed:', err); }
-    };
-    if (userData?.uid) migrate();
-  }, [userData?.uid]);
 
   // --- Audio Control Functions ---
   const handleNext = useCallback(() => {
@@ -236,7 +193,6 @@ export function useFocusMusic(userData: UserData): UseFocusMusicReturn {
       const src = await ensureTrackCached(currentTrack);
       if (src?.startsWith('blob:')) objectUrl = src;
       
-      // Only update src if it's different to avoid restart
       if (globalAudio.src !== src && src) {
         globalAudio.src = src;
         globalAudio.load();
@@ -270,12 +226,9 @@ export function useFocusMusic(userData: UserData): UseFocusMusicReturn {
     };
   }, [handleNext]);
 
-  // Handle Pause/Complete from external state
   useEffect(() => {
     return () => {
-      // This runs on unmount of the FocusView
       globalAudio.pause();
-      // Use the ref to avoid stale closure
       patchUserData({
         music: { ...musicRef.current, isPlaying: false }
       });
@@ -301,16 +254,18 @@ export function useFocusMusic(userData: UserData): UseFocusMusicReturn {
       const result = await res.json();
       if (!result.success) throw new Error(result.error);
       setUploadProgress(80);
-      await addDoc(collection(db, 'shared_music'), {
+      
+      await supabase.from('shared_music').insert({
+        id: crypto.randomUUID(),
         mood: selectedMood,
         title: file.name.replace(/\.[^/.]+$/, ""),
         artist: 'Shared Drive',
         cover: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=400&fit=crop',
         url: result.url,
-        driveId: result.id,
-        isCustom: true,
-        createdAt: new Date().toISOString(),
-        uploadedBy: userData.uid || 'unknown'
+        drive_id: result.id,
+        is_custom: true,
+        created_at: new Date().toISOString(),
+        uploaded_by: userData.uid || 'unknown'
       });
       setUploadProgress(100);
       setTimeout(() => { setIsCaching(false); setUploadProgress(0); }, 1000);
@@ -323,8 +278,7 @@ export function useFocusMusic(userData: UserData): UseFocusMusicReturn {
 
   const handleDeleteTrack = async (track: MusicTrackData) => {
     try {
-      await deleteDoc(doc(db, 'shared_music', track.id));
-      if (track.storagePath) await deleteObject(ref(storage, track.storagePath));
+      await supabase.from('shared_music').delete().eq('id', track.id);
       await musicStore.deleteTrack(track.id);
       if (currentTrack?.id === track.id) handleNext();
     } catch { alert('Xóa nhạc thất bại.'); }
@@ -335,15 +289,16 @@ export function useFocusMusic(userData: UserData): UseFocusMusicReturn {
     if (!trimmed) return;
     try {
       const label = decodeURIComponent(trimmed.split('/').pop()?.split('?')[0] || 'Custom Track');
-      await addDoc(collection(db, 'shared_music'), {
+      await supabase.from('shared_music').insert({
+        id: crypto.randomUUID(),
         mood: 'all',
         title: label,
         artist: isDirectStreamUrl(trimmed) ? 'Cloud Link' : 'Custom Link',
         cover: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=400&fit=crop',
         url: trimmed,
-        isCustom: true,
-        createdAt: new Date().toISOString(),
-        uploadedBy: userData.uid || 'unknown'
+        is_custom: true,
+        created_at: new Date().toISOString(),
+        uploaded_by: userData.uid || 'unknown'
       });
     } catch (err: unknown) {
       alert('Thêm link nhạc thất bại: ' + (err instanceof Error ? err.message : String(err)));

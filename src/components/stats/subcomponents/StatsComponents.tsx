@@ -1,7 +1,7 @@
 import React from 'react';
 import { Layout, Calendar as CalendarIcon, Sparkles, Zap, Rocket, Cpu } from 'lucide-react';
-import { getAvatarUrl, getAssigneeIdByEmail, TeamMember, UserData } from '../../../utils/helpers';
-import { DEFAULT_AVATARS, AI_MODELS } from '../../../utils/constants';
+import { getAvatarUrl, getDefaultAvatar, TeamMember, UserData } from '../../../utils/helpers';
+import { AI_MODELS } from '../../../utils/constants';
 
 interface TeamMembersListProps {
   teamMembers: TeamMember[];
@@ -16,7 +16,7 @@ export function TeamMembersList({ teamMembers, userData, isDark }: TeamMembersLi
         <div key={member.uid} className={`relative overflow-hidden p-4 rounded-3xl flex flex-col gap-3 transition-all group ${isDark ? 'bg-slate-900/60 border border-slate-800 hover:border-indigo-500/50 shadow-xl shadow-slate-950/20' : 'bg-white border border-slate-200 hover:border-indigo-500/30 shadow-lg shadow-slate-200/50'}`}>
           <div className="flex items-center gap-3">
             <div className={`relative flex-shrink-0 ${member.ownedItemIds?.includes('frame_neon') ? 'avatar-frame-neon' : ''}`}>
-              <img src={getAvatarUrl(member.avatarConfig || DEFAULT_AVATARS[getAssigneeIdByEmail(member.email) as keyof typeof DEFAULT_AVATARS] || {})} className="w-12 h-12 rounded-full border-2 border-indigo-400/40 object-cover" alt={member.displayName} />
+              <img src={getAvatarUrl(member.avatarConfig || getDefaultAvatar(member.email) || {})} className="w-12 h-12 rounded-full border-2 border-indigo-400/40 object-cover" alt={member.displayName} />
               <div className="absolute -bottom-1 -right-1 bg-indigo-600 text-white text-[8px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-slate-900 ring-1 ring-indigo-400/50">
                 {member.level || 1}
               </div>

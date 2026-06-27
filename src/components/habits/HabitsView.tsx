@@ -1,9 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import type { User } from 'firebase/auth';
+import type { AppUser as User } from '../../utils/helpers';
 import { Swords, Trophy, Snowflake } from 'lucide-react';
 import HabitBattleCard from './HabitBattleCard';
 import HabitWizard from './HabitWizard';
-import HabitBattleScene from './HabitBattleScene';
 import BossBanner from './BossBanner';
 import type { Habit } from '../../services/habitService';
 import { useHabits } from '../../hooks/useHabits';
@@ -12,6 +11,7 @@ import { getTodayKey, isCheckedForActor, daysSinceCreated } from '../../game/hab
 import { getMonster } from '../../game/bestiary';
 import { FREEZE_SHARDS_PER_FREEZE, ASSIGNEES } from '../../utils/constants';
 import type { UserData } from '../../utils/helpers';
+import { getLegacyIdByEmail } from '../../utils/helpers';
 
 interface HabitsViewProps {
   user: User | null;
@@ -25,26 +25,22 @@ export default function HabitsView({ user, userData, isDark, currentAssigneeId }
     myHabits, partnerHabits, sealedHabits, isLoaded, canCreateMore,
     checkIn, createHabit, archiveHabit, sealHabit
   } = useHabits(user, currentAssigneeId);
-  const boss = useWeeklyBoss(user, currentAssigneeId);
+  // currentAssigneeId (uid) = sở hữu dữ liệu; playerSlug ('tit'/'tun') = danh tính người chơi cho duo & boss
+  const playerSlug = getLegacyIdByEmail(user?.email);
+  const boss = useWeeklyBoss(user, playerSlug);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
-  const [battlingHabit, setBattlingHabit] = useState<Habit | null>(null);
-
-  // Giữ tham chiếu habit mới nhất khi đang battle (để thanh máu/lịch sử cập nhật realtime)
-  const liveBattling = battlingHabit
-    ? myHabits.find((h) => h.id === battlingHabit.id) || battlingHabit
-    : null;
 
   const todayKey = getTodayKey();
   const doneToday = useMemo(
     () =>
       myHabits.filter((h) =>
-        isCheckedForActor(h.history || {}, h.type === 'duo', currentAssigneeId, todayKey)
+        isCheckedForActor(h.history || {}, h.type === 'duo', playerSlug, todayKey)
       ).length,
-    [myHabits, todayKey, currentAssigneeId]
+    [myHabits, todayKey, playerSlug]
   );
   const isPerfectDay = myHabits.length > 0 && doneToday === myHabits.length;
 
-  const partnerKey = currentAssigneeId === 'tit' ? 'tun' : 'tit';
+  const partnerKey = playerSlug === 'tit' ? 'tun' : 'tit';
   const partnerName = ASSIGNEES[partnerKey as keyof typeof ASSIGNEES]?.name || 'Người ấy';
   const shards = userData.freezeShards || 0;
 
@@ -115,9 +111,8 @@ export default function HabitsView({ user, userData, isDark, currentAssigneeId }
               habit={habit}
               isDark={isDark}
               isOwner
-              assigneeKey={currentAssigneeId}
+              assigneeKey={playerSlug}
               onCheck={checkIn}
-              onBattle={(h) => setBattlingHabit(h)}
               onArchive={(h) => archiveHabit(h.id)}
               onSeal={sealHabit}
             />
@@ -161,7 +156,7 @@ export default function HabitsView({ user, userData, isDark, currentAssigneeId }
                   }`}
                 >
                   <div className="relative inline-block">
-                    <span className="text-4xl grayscale opacity-70 select-none">{monster.emoji}</span>
+                    <img src={monster.imageUrl} alt={monster.name} className="w-14 h-14 object-contain grayscale opacity-70 mx-auto" />
                     <span className="absolute -bottom-1 -right-2 text-lg">🔮</span>
                   </div>
                   <p className="font-black text-[11px] mt-2 truncate">{monster.name}</p>
@@ -185,17 +180,6 @@ export default function HabitsView({ user, userData, isDark, currentAssigneeId }
         onClose={() => setIsWizardOpen(false)}
         onCreate={createHabit}
       />
-
-      {liveBattling && (
-        <HabitBattleScene
-          habit={liveBattling}
-          isDark={isDark}
-          assigneeKey={currentAssigneeId}
-          avatarConfig={userData.avatarConfig}
-          onCheck={checkIn}
-          onClose={() => setBattlingHabit(null)}
-        />
-      )}
     </div>
   );
 }

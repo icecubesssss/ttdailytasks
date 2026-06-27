@@ -16,7 +16,7 @@ import { useCalendarAutoSync } from './useCalendarAutoSync';
 import { useNow } from './useNow';
 import { useActivityResume } from './useActivityResume';
 import { useDeepLinks } from './useDeepLinks';
-import { isDummyConfig, googleCalendarApiKey, calendarIdTit, calendarIdTun, appsScriptUrl } from '../firebase';
+import { googleCalendarApiKey, calendarIdTit, calendarIdTun, appsScriptUrl } from '../config';
 
 export function useTTApp() {
   const tasks = useAppStore((state) => state.tasks);

@@ -1,11 +1,12 @@
 {
+  // Chỉ dùng để type-check vite.config.ts trong editor (Vite tự build, không emit).
   "compilerOptions": {
     "composite": true,
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "Bundler",
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["vite.config.js", "vite.config.ts"]
+  "include": ["vite.config.ts"]
 }

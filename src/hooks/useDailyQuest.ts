@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect } from 'react';
 import * as dailyQuestService from '../services/dailyQuestService';
 import { Task, UserData } from '../utils/helpers';
 import { DailyQuest } from '../services/dailyQuestService';
-import { Unsubscribe } from 'firebase/firestore';
 
 export interface UseDailyQuestProps {
   tasks: Task[];
@@ -28,7 +27,7 @@ export const useDailyQuest = ({
   const [dailyQuest, setDailyQuest] = useState<DailyQuest | null>(null);
 
   useEffect(() => {
-    const unsubscribe: Unsubscribe = dailyQuestService.subscribeToDailyQuest(setDailyQuest, (err) =>
+    const unsubscribe = dailyQuestService.subscribeToDailyQuest(setDailyQuest, (err) =>
       console.error('Daily Quest Subscription Error:', err)
     );
     return () => unsubscribe();

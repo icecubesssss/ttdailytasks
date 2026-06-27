@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as taskService from '../services/taskService';
-import type { Task } from '../utils/helpers';
-import type { User } from 'firebase/auth';
+import type { Task, AppUser as User } from '../utils/helpers';
 
 interface UseActivityResumeProps {
   user: User | null;

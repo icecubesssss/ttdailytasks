@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import * as taskService from '../services/taskService';
 import { checkTaskStale, Task } from '../utils/helpers';
 import { HEARTBEAT_INTERVAL, HEARTBEAT_TIMEOUT } from '../utils/constants';
-import type { User } from 'firebase/auth';
+import type { AppUser as User } from '../utils/helpers';
 
 /**
  * Heartbeat system for auto-pausing stale tasks.

@@ -4,8 +4,7 @@ import { Plus, X } from 'lucide-react';
 import TaskForm from '../tasks/TaskForm';
 import TaskBoard from '../tasks/TaskBoard';
 import QuickNote from '../quicknote/QuickNote';
-import type { Task, UserData, TeamMember, LevelInfo } from '../../utils/helpers';
-import type { User } from 'firebase/auth';
+import type { Task, UserData, TeamMember, LevelInfo, AppUser as User } from '../../utils/helpers';
 
 const CalendarView = lazy(() => import('../calendar/CalendarView'));
 const Dashboard = lazy(() => import('./Dashboard'));

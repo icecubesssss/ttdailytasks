@@ -17,7 +17,7 @@ export function TaskTags({ task, isLocked, isDark, onPriorityChange, onDelete }:
         <button
           onClick={() => !isLocked && onPriorityChange(task.id, task.priority ?? 'low')}
           disabled={!!isLocked}
-          className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest transition-all ${isLocked ? 'cursor-default' : 'hover:scale-110 active:scale-95 cursor-pointer'} ${task.priority === 'high' ? 'bg-red-500/20 text-red-500' : task.priority === 'medium' ? 'bg-amber-500/20 text-amber-600' : 'bg-slate-500/20 text-slate-500'}`}
+          className={`relative z-20 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest transition-all ${isLocked ? 'cursor-default' : 'hover:scale-110 active:scale-95 cursor-pointer'} ${task.priority === 'high' ? 'bg-red-500/20 text-red-500' : task.priority === 'medium' ? 'bg-amber-500/20 text-amber-600' : 'bg-slate-500/20 text-slate-500'}`}
         >
           {task.priority || 'vừa'}
         </button>
@@ -34,7 +34,7 @@ export function TaskTags({ task, isLocked, isDark, onPriorityChange, onDelete }:
         )}
       </div>
       {!isLocked ? (
-        <button onClick={() => onDelete(task.id)} aria-label="Xóa task" className="text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button>
+        <button onClick={() => onDelete(task.id)} aria-label="Xóa task" className="relative z-20 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button>
       ) : (
         <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-500/10 text-slate-500 text-[8px] font-black uppercase tracking-widest">
           <Lock size={10} /> LOCK

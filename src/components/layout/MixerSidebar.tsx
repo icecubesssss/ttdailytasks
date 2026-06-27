@@ -49,6 +49,7 @@ export default function MixerSidebar({
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <button
+            aria-label="Đóng"
             onClick={onClose}
             className="p-2 rounded-xl bg-white/10 text-white/70 hover:bg-white/20 transition-all"
           >
@@ -80,6 +81,7 @@ export default function MixerSidebar({
           </div>
           <input
             type="file"
+            aria-label="Tải file nhạc lên"
             ref={fileInputRef}
             className="hidden"
             accept="audio/mp3,audio/mpeg"
@@ -181,6 +183,7 @@ export default function MixerSidebar({
                   <div className="flex items-center gap-2">
                     {track.isCustom && (
                       <button
+                        aria-label="Xóa bài hát"
                         onClick={(e: React.MouseEvent) => {
                           e.stopPropagation();
                           if (confirm(`Bạn có chắc muốn xóa bài "${track.title}"?`)) {

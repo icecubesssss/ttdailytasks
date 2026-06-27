@@ -1,10 +1,8 @@
 import React from 'react';
 import { Moon, Sun, Sparkles, Snowflake } from 'lucide-react';
 import StreakCalendar from '../stats/StreakCalendar';
-import { getAssigneeIdByEmail, getAvatarUrl } from '../../utils/helpers';
-import { DEFAULT_AVATARS } from '../../utils/constants';
-import type { UserData, TeamMember } from '../../utils/helpers';
-import type { User } from 'firebase/auth';
+import { getAvatarUrl, getDefaultAvatar } from '../../utils/helpers';
+import type { UserData, TeamMember, AppUser as User } from '../../utils/helpers';
 
 type HeaderMember = Pick<
   TeamMember,
@@ -173,7 +171,7 @@ function AppHeader({
                     <img
                       src={getAvatarUrl(
                         member.avatarConfig ||
-                          DEFAULT_AVATARS[getAssigneeIdByEmail(member.email || '') || ''] ||
+                          getDefaultAvatar(member.email) ||
                           {}
                       )}
                       className={`w-10 h-10 md:w-12 md:h-12 rounded-full border-2 ${

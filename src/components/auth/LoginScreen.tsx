@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { auth, db, appId } from '../../firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { supabase } from '../../supabase';
 import { ShieldAlert, Zap, Lock, User, Heart } from 'lucide-react';
 
 interface LoginScreenProps {
@@ -24,20 +22,20 @@ const ALLOWED_USERS = {
 const SECRET_PASS = '04102023';
 
 export default function LoginScreen({ authError }: LoginScreenProps) {
-  const [localError, setLocalError] = useState(null);
+  const [localError, setLocalError] = useState<string | null>(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async (e) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError(null);
     setIsLoading(true);
 
     const userKey = username.trim().toLowerCase();
-    
-    // 1. Kiểm tra 2 tài khoản cục bộ
-    if (!ALLOWED_USERS[userKey]) {
+    const allowed = ALLOWED_USERS[userKey as keyof typeof ALLOWED_USERS];
+
+    if (!allowed) {
        setLocalError('Sai tên đăng nhập! Chỉ có Tit và Tun mới được vào Nhà này nhé!');
        setIsLoading(false);
        return;
@@ -49,44 +47,46 @@ export default function LoginScreen({ authError }: LoginScreenProps) {
        return;
     }
 
-    const { email, name, photo } = ALLOWED_USERS[userKey];
+    const { email, name, photo } = allowed;
 
     try {
-      let result;
-      try {
-         // 2. Cố gắng đăng nhập bình thường
-         result = await signInWithEmailAndPassword(auth, email, password);
-      } catch (err) {
-         // 3. Nếu là lần đầu vào chưa có tài khoản -> TỰ ĐỘNG KHỞI TẠO TK CHO 2 BẠN!
-         if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
-            result = await createUserWithEmailAndPassword(auth, email, password);
-            // Gắn Tên và Avatar mặc định luôn
-            await updateProfile(result.user, { displayName: name, photoURL: photo });
-         } else {
-            throw err; // Bắt các lỗi khác như Firebase chưa bật Email Auth
-         }
+      // 1. Try to sign in
+      const signIn = await supabase.auth.signInWithPassword({ email, password });
+      let authUser = signIn.data.user;
+      const signInError = signIn.error;
+
+      // 2. If user doesn't exist, sign up
+      if (signInError && (signInError.message.includes('Invalid login credentials') || signInError.message.includes('not found'))) {
+        const signUp = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              displayName: name,
+              photoURL: photo
+            }
+          }
+        });
+        if (signUp.error) throw signUp.error;
+        authUser = signUp.data.user;
+      } else if (signInError) {
+        throw signInError;
       }
 
-      const user = result.user;
-      
-      // 4. Lưu tên vào danh sách thành viên Công ty (để tí nữa gán việc)
-      await setDoc(doc(db, 'artifacts', appId, 'public', 'team_members', user.uid), {
-        uid: user.uid,
-        displayName: user.displayName || name,
-        photoURL: user.photoURL || photo,
-        email: user.email,
-        lastActive: Date.now()
-      }, { merge: true });
+      if (!authUser) throw new Error("No user returned from auth");
 
-    } catch (error) {
+      // 3. Save to team_members
+      await supabase.from('team_members').upsert({
+        uid: authUser.id,
+        display_name: authUser.user_metadata?.displayName || name,
+        photo_url: authUser.user_metadata?.photoURL || photo,
+        email: authUser.email,
+        last_active: Date.now()
+      });
+
+    } catch (error: any) {
       console.error("Login Error", error);
-      if (error.code === 'auth/operation-not-allowed') {
-         setLocalError('Bạn chưa BẬT Phương thức Đăng Nhập Email/Password trong Firebase Console!');
-      } else if (error.code === 'auth/email-already-in-use') {
-         setLocalError('Hệ thống đang xài tệp lưu cũ trong máy bạn! Hãy bấm vào Terminal (bảng đen chạy nãy giờ gõ lệnh npm run dev), bấm Ctrl + C để dừng, rồi gõ "npm run dev" để chạy lại. Xong lên web bấm F5 nhen!');
-      } else {
-         setLocalError('Mã máy chủ báo: ' + error.message);
-      }
+      setLocalError('Lỗi đăng nhập: ' + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -114,7 +114,7 @@ export default function LoginScreen({ authError }: LoginScreenProps) {
             <div className="bg-red-500/10 border border-red-500/40 text-red-500 p-4 rounded-2xl flex items-start gap-3 mt-4 text-left">
                 <ShieldAlert size={20} className="mt-0.5 flex-shrink-0" />
                 <div className="text-sm">
-                  <p className="font-bold">Lỗi Cấu Hình Firebase</p>
+                  <p className="font-bold">Lỗi Cấu Hình Hệ Thống</p>
                   <p className="opacity-80">{authError}</p>
                 </div>
             </div>

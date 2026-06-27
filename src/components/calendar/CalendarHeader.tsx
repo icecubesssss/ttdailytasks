@@ -39,7 +39,7 @@ export default function CalendarHeader({
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
-            <button onClick={() => setCurrentDate(d => subWeeks(d, 1))}
+            <button aria-label="Tuần trước" onClick={() => setCurrentDate(subWeeks(currentDate, 1))}
               className={`p-2 rounded-xl transition-all hover:scale-110 active:scale-95 ${isDark ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'}`}>
               <ChevronLeft size={18} />
             </button>
@@ -49,7 +49,7 @@ export default function CalendarHeader({
                 {format(currentDate, 'MMMM yyyy', { locale: vi })}
               </p>
             </div>
-            <button onClick={() => setCurrentDate(d => addWeeks(d, 1))}
+            <button aria-label="Tuần sau" onClick={() => setCurrentDate(addWeeks(currentDate, 1))}
               className={`p-2 rounded-xl transition-all hover:scale-110 active:scale-95 ${isDark ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'}`}>
               <ChevronRight size={18} />
             </button>
@@ -107,7 +107,7 @@ export default function CalendarHeader({
             {showTun ? <Eye size={12} /> : <EyeOff size={12} />}
             <span className={`w-2 h-2 rounded-full ${OWNER_STYLES.tun.dot}`} /> Tún
           </button>
-          <button onClick={fetchEvents} disabled={loading}
+          <button aria-label="Làm mới lịch" onClick={fetchEvents} disabled={loading}
             className={`p-2 rounded-xl transition-all ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-100'} ${loading ? 'animate-spin' : ''}`}>
             <RefreshCw size={16} className="text-slate-400" />
           </button>

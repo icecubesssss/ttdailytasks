@@ -1,9 +1,8 @@
 import React, { useState, useRef, memo } from 'react';
 import { Plus, Timer, Calendar as CalendarIcon, Users, Tag, Clock, X, Circle, Loader2, ChevronDown } from 'lucide-react';
-import { db, appId } from '../../firebase';
-import { addDoc, collection } from 'firebase/firestore';
+import { addTask } from '../../services/taskService';
 import type { TeamMember, Task, SubTask } from '../../utils/helpers';
-import type { User } from 'firebase/auth';
+import type { AppUser as User } from '../../hooks/useAppBootstrap';
 
 interface TaskFormProps {
   user: User | null;
@@ -51,8 +50,7 @@ const TaskForm = ({ user, isDark, teamMembers = [], onLocalAdd, onAfterSubmit }:
     const finalAssigneeId = assigneeId || user?.uid;
     const assignee = teamMembers.find(m => m.uid === finalAssigneeId);
     
-    const newTask: Task = {
-      id: crypto.randomUUID(),
+    const newTask: Omit<Task, 'id'> = {
       title: currentTitle,
       createdBy: user?.uid || "local-user",
       assigneeId: finalAssigneeId || null,
@@ -76,19 +74,9 @@ const TaskForm = ({ user, isDark, teamMembers = [], onLocalAdd, onAfterSubmit }:
       createdAt: Date.now()
     };
 
-    // Robust Sanitization: Firestore DOES NOT accept 'undefined', and we omit 'id' to let Firestore manage it
-    const cleanTask = Object.entries(newTask).reduce<Record<string, unknown>>((acc, [key, val]) => {
-      if (key !== 'id') {
-        acc[key] = val === undefined ? null : val;
-      }
-      return acc;
-    }, {});
-    
-    console.log("Submitting Task to Firebase (without local ID):", cleanTask);
-    
     if (user && user.uid !== "local-user-test") {
         try {
-          await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'tasks'), cleanTask);
+          await addTask(newTask);
           setFormKey(prev => prev + 1); // Reset uncontrolled inputs
           setAssigneeId(user?.uid || '');
           setDeadline('');
@@ -100,7 +88,7 @@ const TaskForm = ({ user, isDark, teamMembers = [], onLocalAdd, onAfterSubmit }:
           alert("Lỗi thêm công việc: " + message);
         }
     } else if (onLocalAdd) {
-        onLocalAdd(newTask);
+        onLocalAdd({ id: crypto.randomUUID(), ...newTask });
         setFormKey(prev => prev + 1);
         setTempSubTasks([]);
     }

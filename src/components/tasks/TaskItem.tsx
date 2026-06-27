@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Play, Pause, CheckCircle2, Clock, Calendar, Lock, BrainCircuit, ChevronDown } from 'lucide-react';
 import { formatDuration, getLegacyIdByEmail } from '../../utils/helpers';
 import type { Task } from '../../utils/helpers';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { formatDistanceToNow, isPast } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { TaskTags, TaskTitle, SubTaskItem, TimerSettingsPopover } from './subcomponents/TaskComponents';
@@ -116,8 +118,30 @@ function TaskItem({
     }
   }, [subProgress]);
 
+  // --- DnD Sortable ---
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ 
+    id: task.id,
+    disabled: overdue, // Vô hiệu hóa kéo thả cho task Overdue
+  });
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : 'auto',
+    opacity: isDragging ? 0.8 : 1,
+  };
+
   return (
     <div
+      ref={setNodeRef}
+      {...{ style }}
       className={`group relative p-4 rounded-3xl border transition-all hover:-translate-y-1 hover:shadow-2xl ${
         isDark
           ? isCompleted
@@ -128,6 +152,15 @@ function TaskItem({
           : 'bg-white/95 backdrop-blur-md border-slate-200 shadow-xl shadow-slate-200/50'
       } ${isWorking ? 'ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-900 border-indigo-500' : ''}`}
     >
+      {/* Invisible drag handle — only this zone activates DnD, inputs below are free */}
+      {!overdue && (
+        <div
+          {...attributes}
+          {...listeners}
+          className="absolute inset-x-0 top-0 h-10 cursor-grab active:cursor-grabbing touch-none z-10"
+          aria-label="Kéo để sắp xếp"
+        />
+      )}
       <TaskTags
         task={task}
         isLocked={!!isLocked}

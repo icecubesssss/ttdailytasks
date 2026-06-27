@@ -1,6 +1,20 @@
-import { XP_BASE } from './constants';
+import { XP_BASE, DEFAULT_AVATARS } from './constants';
+
+/**
+ * Người dùng đã đăng nhập — chuẩn hoá từ Supabase auth user.
+ * Thay cho `User` của firebase/auth (đã gỡ sau khi migrate sang Supabase).
+ */
+export interface AppUser {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  isAnonymous: boolean;
+}
 
 export interface AvatarConfig {
+  /** Phiên bản avatar — dùng cache-busting khi đổi diện mạo (khớp DEFAULT_AVATARS) */
+  avatarVersion?: number;
   seed?: string;
   hair?: string;
   eyes?: string;
@@ -162,7 +176,15 @@ export const getAvatarUrl = (config: AvatarConfig = {}): string => {
   return `${baseUrl}?${params.toString()}`;
 };
 
-export const getLegacyIdByEmail = (email: string | null | undefined): string | null => {
+/**
+ * Danh tính người chơi cố định (Tít/Tún) suy ra từ email.
+ * ĐÂY là khóa ổn định cho mọi logic 2-người (duo habit, boss tuần, avatar mặc định, chủ lịch)
+ * — KHÔNG dùng uid vì uid đã đổi 1 lần (Firebase→Supabase) và còn có thể đổi nữa.
+ * uid chỉ dùng cho sở hữu/khóa dữ liệu (tasks, user_stats...).
+ */
+export type PlayerSlug = 'tit' | 'tun';
+
+export const getLegacyIdByEmail = (email: string | null | undefined): PlayerSlug | null => {
   if (!email) return null;
   const e = email.toLowerCase();
   if (e === 'dinhthai.ctv@gmail.com') return 'tit';
@@ -171,10 +193,17 @@ export const getLegacyIdByEmail = (email: string | null | undefined): string | n
   return null;
 };
 
+/** Avatar mặc định theo người chơi (Tít/Tún) — keyed theo slug 'tit'/'tun', KHÔNG theo uid. */
+export const getDefaultAvatar = (email: string | null | undefined): AvatarConfig | undefined => {
+  const slug = getLegacyIdByEmail(email);
+  return slug ? DEFAULT_AVATARS[slug] : undefined;
+};
+
 export const getAssigneeIdByEmail = (email: string | null | undefined, teamMembers: TeamMember[] = []): string | null => {
   if (!email) return null;
   const member = teamMembers.find(m => m?.email?.toLowerCase() === email.toLowerCase());
-  return member ? member.uid : null;
+  if (member) return member.uid;
+  return getLegacyIdByEmail(email);
 };
 
 export interface LevelInfo {

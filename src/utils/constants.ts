@@ -1,3 +1,5 @@
+import type { AvatarConfig } from './helpers';
+
 export const XP_PER_TASK = 50;
 export const XP_PER_SUBTASK = 10;
 export const XP_BASE = 500;
@@ -25,17 +27,6 @@ export const ASSIGNEES = {
   'tit': { name: 'Tít', photo: null },
   'tun': { name: 'Tún', photo: null }
 } as const;
-
-export interface AvatarConfig {
-  avatarVersion: number;
-  seed: string;
-  hair: string;
-  eyes: string;
-  mouth: string;
-  body: string;
-  hairColor: string;
-  clothingColor: string;
-}
 
 export const DEFAULT_AVATARS: Record<string, AvatarConfig> = {
   'tit': { avatarVersion: 8, seed: 'Tit', hair: 'shortCombover', eyes: 'open', mouth: 'smile', body: 'squared', hairColor: '362c47', clothingColor: '456dff' },

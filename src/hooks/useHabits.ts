@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import confetti from 'canvas-confetti';
-import type { User } from 'firebase/auth';
+import type { AppUser as User } from '../utils/helpers';
+import { getLegacyIdByEmail } from '../utils/helpers';
 import * as habitService from '../services/habitService';
 import type { Habit, HabitCheckOutcome } from '../services/habitService';
 import { celebrate } from '../game/celebrationStore';
@@ -10,6 +11,7 @@ import { useAppStore } from '../store/useAppStore';
 import { MAX_ACTIVE_HABITS, FREEZE_SHARDS_PER_FREEZE } from '../utils/constants';
 import { dealBossDamage } from '../services/weeklyBossService';
 import { BOSS_DMG_HABIT, BOSS_DMG_DUO_COMPLETE } from '../game/weeklyBoss';
+import { bossWeaknessOfDay, BOSS_WEAKNESS_MULTIPLIER } from '../game/battle';
 import { celebrateBossDefeat } from './useWeeklyBoss';
 
 const ignoreAsyncError = (): undefined => undefined;
@@ -83,13 +85,14 @@ export function useHabits(user: User | null, currentAssigneeId: string | null): 
       const damage = previewDamage(habit, mode);
 
       try {
-        const actorKey =
-          currentAssigneeId === 'tit' || currentAssigneeId === 'tun' ? currentAssigneeId : undefined;
-        const outcome = await habitService.checkInHabit(user.uid, habit.id, todayKey, mode, actorKey);
+        // Danh tính người điểm danh = slug 'tit'/'tun' (ổn định), KHÔNG phải uid.
+        const actorKey = getLegacyIdByEmail(user.email);
+        const outcome = await habitService.checkInHabit(user.uid, habit.id, todayKey, mode, actorKey ?? undefined);
 
         // Đòn này cũng trừ máu Boss Tuần (hoàn tác thì trả máu — chống farm toggle)
         if (actorKey && outcome.action !== 'switched') {
-          const dmgBase = outcome.duoCompleted ? BOSS_DMG_DUO_COMPLETE : BOSS_DMG_HABIT;
+          const weaknessMult = bossWeaknessOfDay(todayKey) === 'habit' ? BOSS_WEAKNESS_MULTIPLIER : 1;
+          const dmgBase = (outcome.duoCompleted ? BOSS_DMG_DUO_COMPLETE : BOSS_DMG_HABIT) * weaknessMult;
           dealBossDamage(actorKey, outcome.action === 'unchecked' ? -dmgBase : dmgBase)
             .then((res) => {
               if (res.justDefeated) celebrateBossDefeat(res.bossId);
@@ -159,7 +162,7 @@ export function useHabits(user: User | null, currentAssigneeId: string | null): 
         const allDone = myHabits.every(
           (h) =>
             h.id === habit.id ||
-            isCheckedForActor(h.history || {}, h.type === 'duo', currentAssigneeId, todayKey)
+            isCheckedForActor(h.history || {}, h.type === 'duo', actorKey, todayKey)
         );
         if (allDone && myHabits.length > 1 && outcome.action === 'checked') {
           setTimeout(() => {

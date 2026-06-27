@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { Gift, Check } from 'lucide-react';
 import type { UseWeeklyBossReturn } from '../../hooks/useWeeklyBoss';
 import { ASSIGNEES } from '../../utils/constants';
+import { bossPhase, bossWeaknessOfDay } from '../../game/battle';
+import { getTodayKey } from '../../game/habitEngine';
 
 interface BossBannerProps {
   boss: UseWeeklyBossReturn;
@@ -16,13 +18,15 @@ function BossBanner({ boss, isDark }: BossBannerProps): React.ReactElement {
     defeated, myClaimed, daysLeft, rewardGold, claim
   } = boss;
   const hpPercent = Math.max(0, Math.round((hpLeft / maxHp) * 100));
+  const phase = bossPhase(hpPercent);
+  const weakness = bossWeaknessOfDay(getTodayKey());
 
   return (
     <div
-      className={`relative overflow-hidden rounded-[1.75rem] border p-4 mb-5 ${
+      className={`relative overflow-hidden rounded-[1.75rem] border p-4 mb-5 transition-shadow duration-500 ${
         isDark
-          ? 'bg-gradient-to-r from-slate-900/80 to-indigo-950/60 border-white/10'
-          : 'bg-gradient-to-r from-white/70 to-indigo-50/70 border-white/60 shadow-sm'
+          ? `bg-gradient-to-r from-slate-900/80 to-indigo-950/60 border-white/10 ${phase.aura}`
+          : `bg-gradient-to-r from-white/70 to-indigo-50/70 border-white/60 shadow-sm ${phase.aura}`
       }`}
     >
       <div className="flex items-center gap-4">
@@ -35,7 +39,17 @@ function BossBanner({ boss, isDark }: BossBannerProps): React.ReactElement {
           }
           transition={defeated ? { duration: 0.5 } : { duration: 1.6, repeat: Infinity }}
         >
-          {defeated ? '🏳️' : bossInfo.emoji}
+          {defeated ? (
+            <span className="text-5xl opacity-50">🏳️</span>
+          ) : (
+            <motion.img 
+              src={bossInfo.imageUrl} 
+              alt={bossInfo.name} 
+              className="w-16 h-16 object-contain drop-shadow-2xl"
+              animate={{ y: [0, -8, 0], scale: [1, 1.05, 1], rotate: [0, -2, 2, 0] }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+            />
+          )}
         </motion.span>
 
         <div className="flex-1 min-w-0">
@@ -44,10 +58,15 @@ function BossBanner({ boss, isDark }: BossBannerProps): React.ReactElement {
               Boss tuần · còn {daysLeft} ngày
             </span>
             <span className="font-black text-sm">{bossInfo.name}</span>
+            {!defeated && (
+              <span className="px-1.5 py-0.5 rounded bg-slate-500/10 text-slate-500 text-[8px] font-black uppercase border border-slate-500/20">
+                {phase.label}
+              </span>
+            )}
           </div>
 
           <p className="text-[11px] font-bold italic text-slate-400 truncate mt-0.5">
-            “{defeated ? bossInfo.defeatLine : bossInfo.intro}”
+            “{defeated ? bossInfo.defeatLine : phase.mood}”
           </p>
 
           <div className="flex items-center gap-2 mt-2">
@@ -68,7 +87,10 @@ function BossBanner({ boss, isDark }: BossBannerProps): React.ReactElement {
             ⚔️ {Object.entries(ASSIGNEES)
               .map(([key, info]) => `${info.name}: ${damageByActor[key] || 0} dmg`)
               .join(' · ')}{' '}
-            — mỗi task xong & mỗi lần đánh quái đều trừ máu boss
+            | Điểm yếu hôm nay:{' '}
+            <span className="text-amber-500 font-black uppercase">
+              {weakness === 'task' ? 'Task (x2 Dmg)' : 'Habit (x2 Dmg)'}
+            </span>
           </p>
         </div>
 

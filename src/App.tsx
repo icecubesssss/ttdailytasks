@@ -12,6 +12,7 @@ import AppNavigation from './components/layout/AppNavigation';
 import AppSidebar from './components/layout/AppSidebar';
 import CommandPalette from './components/layout/CommandPalette';
 import CelebrationLayer from './components/game/CelebrationLayer';
+import DesktopUpdatePrompt from './components/layout/DesktopUpdatePrompt';
 import { AppProviders } from './components/layout/AppProviders';
 
 const SIDEBAR_COLLAPSED_KEY = 'tt_sidebar_collapsed';
@@ -182,6 +183,9 @@ export default function App(): React.ReactElement {
 
         {/* ── Chip thưởng bay (gold/xp/combo/level-up) ──────── */}
         <CelebrationLayer />
+        
+        {/* ── Modal tự động cập nhật bản Desktop ─────────────── */}
+        <DesktopUpdatePrompt />
       </div>
     </AppProviders>
   );

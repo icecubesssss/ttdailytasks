@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { calculateLevel, LevelInfo, Task, TeamMember } from '../utils/helpers';
-import type { User } from 'firebase/auth';
+import type { AppUser as User } from '../utils/helpers';
 
 interface UseAppViewModelProps {
   tasks: Task[];

@@ -90,8 +90,8 @@ export default function HabitWizard({ open, isDark, onClose, onCreate }: HabitWi
   }`;
 
   return (
-    <Modal open={open} onClose={handleClose} isDark={isDark}>
-      <div className="max-w-xl mx-auto">
+    <Modal open={open} onClose={handleClose} isDark={isDark} maxWidthCls="max-w-2xl">
+      <div className="w-full mx-auto">
         {/* Progress */}
         <div className="flex items-center gap-1.5 mb-4">
           {STEP_TITLES.map((_, i) => (
@@ -129,6 +129,8 @@ export default function HabitWizard({ open, isDark, onClose, onCreate }: HabitWi
                         if (m.id === 'bang_nguoi_lanh') setHabitType('duo');
                       }}
                       className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all active:scale-95 ${
+                        m.id === 'bang_nguoi_lanh' ? 'sm:col-span-2 justify-center sm:px-8' : ''
+                      } ${
                         monsterId === m.id
                           ? 'border-indigo-500 bg-indigo-500/10 ring-2 ring-indigo-500/30'
                           : isDark
@@ -136,8 +138,8 @@ export default function HabitWizard({ open, isDark, onClose, onCreate }: HabitWi
                           : 'border-slate-200 bg-white/60 hover:border-indigo-300'
                       }`}
                     >
-                      <span className="text-3xl">{m.emoji}</span>
-                      <span className="min-w-0">
+                      <img src={m.imageUrl} alt={m.name} className="w-10 h-10 object-contain drop-shadow-md shrink-0" />
+                      <span className={`min-w-0 ${m.id === 'bang_nguoi_lanh' ? 'flex-initial' : 'flex-1'}`}>
                         <span className="block font-black text-xs truncate">
                           {m.identityEmoji} {m.identity}
                         </span>
@@ -247,13 +249,7 @@ export default function HabitWizard({ open, isDark, onClose, onCreate }: HabitWi
             {/* ── B4: gặp quái ── */}
             {step === 3 && monster && (
               <div className="text-center py-2">
-                <motion.div
-                  animate={{ rotate: [0, -8, 8, 0], scale: [1, 1.08, 1] }}
-                  transition={{ duration: 1.2, repeat: Infinity }}
-                  className="text-7xl mb-3"
-                >
-                  {monster.emoji}
-                </motion.div>
+                  <img src={monster.imageUrl} alt={monster.name} className="w-24 h-24 mx-auto object-contain drop-shadow-xl" />
                 <p className={`text-sm font-bold italic mb-4 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                   “{monster.intro}”
                 </p>

@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useEffect } from 'react';
 import { Task } from '../utils/helpers';
-import type { User } from 'firebase/auth';
+import type { AppUser as User } from '../utils/helpers';
 
 interface UseFocusTimerReturn {
   focusingTaskId: string | null;
@@ -30,6 +30,7 @@ export function useFocusTimer(user: User | null, tasks: Task[]): UseFocusTimerRe
   // Re-sync khi extension vừa được cài lại / reload
   useEffect(() => {
     if (!user) return;
+    const focusUser = user;
 
     function onExtensionReady(event: MessageEvent) {
       if (event.source !== window) return;
@@ -38,7 +39,7 @@ export function useFocusTimer(user: User | null, tasks: Task[]): UseFocusTimerRe
       const focusingTask = tasks.find(t => t.id === focusingTaskId);
       if (focusingTask) {
         window.postMessage(
-          { type: 'TT_FOCUS_START', taskTitle: focusingTask.title, ownerUid: user.uid },
+          { type: 'TT_FOCUS_START', taskTitle: focusingTask.title, ownerUid: focusUser.uid },
           '*'
         );
       } else {

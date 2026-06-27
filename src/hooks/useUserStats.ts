@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User } from 'firebase/auth';
+import { AppUser as User } from '../hooks/useAppBootstrap';
 import confetti from 'canvas-confetti';
 import * as userService from '../services/userService';
 import {
-  getAssigneeIdByEmail, calculateLevel, TeamMember, UserData
+  getLegacyIdByEmail, calculateLevel, TeamMember, UserData
 } from '../utils/helpers';
 import {
   DEFAULT_AVATARS, BOOSTER_DURATIONS,
@@ -24,15 +24,13 @@ const GIFTED_THEME_IDS = ['theme_sakura', 'theme_cyberpunk', 'theme_neon_night',
 type UserStatsUpdates = Partial<UserData> & Record<string, unknown>;
 
 const DEFAULT_SHORTCUT_NAME = 'Làm việc';
-type AssigneeKey = 'tit' | 'tun';
 type BoosterType = keyof typeof BOOSTER_DURATIONS;
 
-const isAssigneeKey = (value: string | null): value is AssigneeKey => value === 'tit' || value === 'tun';
 const isBoosterType = (value: unknown): value is BoosterType => value === 'xp' || value === 'gold';
 
 const getDefaultAvatarByEmail = (email: string | null | undefined, fallbackSeed?: string) => {
-  const assigneeId = getAssigneeIdByEmail(email);
-  if (isAssigneeKey(assigneeId)) return DEFAULT_AVATARS[assigneeId];
+  const slug = getLegacyIdByEmail(email);
+  if (slug) return DEFAULT_AVATARS[slug];
   return { seed: fallbackSeed };
 };
 
@@ -289,24 +287,32 @@ export function useUserStats(user: User | null) {
   const awardTaskRewards = async (isLate: boolean, comboCount = 1) => {
     if (!user || user.uid === 'local-user-test') return;
 
-    // 1. Call Client-Side Transaction Logic (Spark Plan Compatible)
-    userService.callAwardRewards(user.uid, isLate, comboCount).catch(e => {
+    // 1. Optimistic UI (Simple feedback while server processes)
+    // Functional update prevents UI race conditions if called concurrently
+    const base = computeTaskBaseReward(isLate, comboCount);
+    
+    setUserData(prev => {
+      const finalXp = (prev.xp || 0) + base.xp;
+      return {
+        ...prev,
+        xp: finalXp,
+        ttGold: (prev.ttGold || 0) + base.gold,
+        level: calculateLevel(finalXp).level
+      };
+    });
+
+    // 2. Call Client-Side Transaction Logic
+    userService.callAwardRewards(user.uid, isLate, comboCount).then(res => {
+      if (res.success) {
+        setUserData(prev => ({ ...prev, ...res.updates }));
+      }
+    }).catch(e => {
       console.warn('Rewards transaction failed', e);
     });
 
-    // 2. Optimistic UI (Simple feedback while server processes)
-    // We don't simulate the complex streak logic locally anymore to avoid confusion
-    const base = computeTaskBaseReward(isLate, comboCount);
-    const finalXp = (userData.xp || 0) + base.xp;
-
-    patchUserData({
-      xp: finalXp,
-      ttGold: (userData.ttGold || 0) + base.gold,
-      level: calculateLevel(finalXp).level
-    });
-
     // 3. Đòn đánh vào Boss Tuần (fire-and-forget) — gấp đôi nếu hôm nay boss yếu trước "task"
-    const actorKey = getAssigneeIdByEmail(user.email);
+    // Boss tính sát thương theo slug người chơi ('tit'/'tun'), KHÔNG theo uid.
+    const actorKey = getLegacyIdByEmail(user.email);
     if (actorKey) {
       const weaknessMult = bossWeaknessOfDay(getTodayKey()) === 'task' ? BOSS_WEAKNESS_MULTIPLIER : 1;
       const dmg = (isLate ? BOSS_DMG_TASK_LATE : BOSS_DMG_TASK) * weaknessMult;
@@ -336,13 +342,23 @@ export function useUserStats(user: User | null) {
 
     const { xp: xpG, gold: goldG } = computeSubtaskReward(userData.activeBooster);
 
-    const updates = {
-      xp: (userData.xp || 0) + xpG,
-      ttGold: (userData.ttGold || 0) + goldG
-    };
+    // Optimistic UI
+    setUserData(prev => {
+      const finalXp = (prev.xp || 0) + xpG;
+      return {
+        ...prev,
+        xp: finalXp,
+        ttGold: (prev.ttGold || 0) + goldG,
+        level: calculateLevel(finalXp).level
+      };
+    });
 
-    patchUserData(updates);
-    userService.updateUserStats(user.uid, updates).catch(ignoreAsyncError);
+    userService.callAwardSubTaskRewards(user.uid, userData.activeBooster).then(res => {
+      if (res.success) {
+        setUserData(prev => ({ ...prev, ...res.updates }));
+      }
+    }).catch(ignoreAsyncError);
+    
     celebrate({ kind: 'xp', label: `+${xpG} XP · +${goldG} Gold`, sub: 'subtask' });
   };
 

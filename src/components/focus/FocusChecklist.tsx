@@ -72,7 +72,13 @@ export default function FocusChecklist({
               </button>
             ))}
           </div>
-          <form onSubmit={handleAdd} className="mt-2 flex items-center gap-2 border-t pt-2 border-white/10">
+        </div>
+      )}
+
+      {/* Add subtask form — always visible when checklist is toggled on */}
+      {showChecklist && (
+        <div className="p-4 rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-white/10">
+          <form onSubmit={handleAdd} className="flex items-center gap-2">
             <Plus size={10} className="text-slate-500" />
             <input type="text"
               key={`focus-sub-${subResetKey}`}

@@ -1,8 +1,7 @@
 import React from 'react';
 import { motion as Motion } from 'framer-motion';
 import { Flame } from 'lucide-react';
-import { getAvatarUrl, getAssigneeIdByEmail, Task, TeamMember, AvatarConfig } from '../../utils/helpers';
-import { DEFAULT_AVATARS } from '../../utils/constants';
+import { getAvatarUrl, getDefaultAvatar, Task, TeamMember, AvatarConfig } from '../../utils/helpers';
 
 type PartnerInfo = TeamMember | { displayName: string; email: string; avatarConfig?: AvatarConfig | null };
 
@@ -26,9 +25,8 @@ export default function DuoFocusBanner({ task, partnerInfo, now, isDark }: DuoFo
 
   const durationStr = new Date(calculateDuration()).toISOString().substr(11, 8).replace(/^00:/, '');
 
-  const partnerAvatarKey = getAssigneeIdByEmail(partnerInfo.email);
   const partnerAvatarUrl = getAvatarUrl(
-    partnerInfo.avatarConfig || (partnerAvatarKey ? DEFAULT_AVATARS[partnerAvatarKey] : undefined) || {}
+    partnerInfo.avatarConfig || getDefaultAvatar(partnerInfo.email) || {}
   );
 
   return (

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
-import type { User } from 'firebase/auth';
 import { getLegacyIdByEmail } from '../utils/helpers';
+import type { AppUser as User } from '../utils/helpers';
 
 interface Task {
   id: string;

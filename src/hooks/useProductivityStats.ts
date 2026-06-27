@@ -79,19 +79,27 @@ export function useProductivityStats(tasks: Task[], timeRange: 'week' | 'month',
     const previousInterval = { start: previousStart, end: previousEnd };
     const getTaskDate = (t: Task) => new Date(t.endTime || t.lastStartTime || t.createdAt || now);
 
-    const currentTasks = tasks.filter(t => t.totalTrackedTime > 0 && isWithinInterval(getTaskDate(t), currentInterval));
-    const previousTasks = tasks.filter(t => t.totalTrackedTime > 0 && isWithinInterval(getTaskDate(t), previousInterval));
+    // Tasks with time tracking — for focus hours & distribution
+    const currentTimedTasks = tasks.filter(t => t.totalTrackedTime > 0 && isWithinInterval(getTaskDate(t), currentInterval));
+    const previousTimedTasks = tasks.filter(t => t.totalTrackedTime > 0 && isWithinInterval(getTaskDate(t), previousInterval));
 
-    const totalFocusMs = currentTasks.reduce((acc, t) => acc + t.totalTrackedTime, 0);
-    const prevTotalFocusMs = previousTasks.reduce((acc, t) => acc + t.totalTrackedTime, 0);
-    const sessions = currentTasks.length;
+    // ALL completed tasks in period — for on-time rate, late count, sessions
+    const allCurrentTasks = tasks.filter(t => {
+      const s = t.status;
+      return (s === 'completed' || s === 'completed_late') && isWithinInterval(getTaskDate(t), currentInterval);
+    });
 
-    const completedTasks = currentTasks.filter(t => t.status?.startsWith('completed'));
-    const onTimeTasks = completedTasks.filter(t => t.status === 'completed');
-    const onTimeRate = completedTasks.length > 0 ? Math.round((onTimeTasks.length / completedTasks.length) * 100) : 0;
+    const totalFocusMs = currentTimedTasks.reduce((acc, t) => acc + t.totalTrackedTime, 0);
+    const prevTotalFocusMs = previousTimedTasks.reduce((acc, t) => acc + t.totalTrackedTime, 0);
+    const sessions = allCurrentTasks.length;
 
-    const titTasks = currentTasks.filter(t => normalizeAssignee(t) === 'tit');
-    const tunTasks = currentTasks.filter(t => normalizeAssignee(t) === 'tun');
+    const onTimeTasks = allCurrentTasks.filter(t => t.status === 'completed');
+    const onTimeRate = allCurrentTasks.length > 0 ? Math.round((onTimeTasks.length / allCurrentTasks.length) * 100) : 0;
+
+    const titTimedTasks = currentTimedTasks.filter(t => normalizeAssignee(t) === 'tit');
+    const tunTimedTasks = currentTimedTasks.filter(t => normalizeAssignee(t) === 'tun');
+    const titAllTasks = allCurrentTasks.filter(t => normalizeAssignee(t) === 'tit');
+    const tunAllTasks = allCurrentTasks.filter(t => normalizeAssignee(t) === 'tun');
 
     const formatTime = (ms: number) => {
       if (ms === 0) return '0m';
@@ -103,7 +111,7 @@ export function useProductivityStats(tasks: Task[], timeRange: 'week' | 'month',
     const distribution: DistributionData[] = [];
     if (timeRange === 'week') {
       eachDayOfInterval(currentInterval).forEach(d => {
-        const dayTasks = currentTasks.filter(t => isSameDay(getTaskDate(t), d));
+        const dayTasks = currentTimedTasks.filter(t => isSameDay(getTaskDate(t), d));
         const titMs = dayTasks.filter(t => normalizeAssignee(t) === 'tit').reduce((acc, t) => acc + t.totalTrackedTime, 0);
         const tunMs = dayTasks.filter(t => normalizeAssignee(t) === 'tun').reduce((acc, t) => acc + t.totalTrackedTime, 0);
         distribution.push({ label: format(d, 'EEE', { locale: vi }), value: titMs + tunMs, titMs, tunMs });
@@ -114,7 +122,7 @@ export function useProductivityStats(tasks: Task[], timeRange: 'week' | 'month',
       while(curr <= currentEnd) {
         let eow = endOfWeek(curr, { weekStartsOn: WEEK_STARTS_ON });
         if(eow > currentEnd) eow = currentEnd;
-        const weekTasks = currentTasks.filter(t => isWithinInterval(getTaskDate(t), {start: curr, end: eow}));
+        const weekTasks = currentTimedTasks.filter(t => isWithinInterval(getTaskDate(t), {start: curr, end: eow}));
         const titMs = weekTasks.filter(t => normalizeAssignee(t) === 'tit').reduce((acc, t) => acc + t.totalTrackedTime, 0);
         const tunMs = weekTasks.filter(t => normalizeAssignee(t) === 'tun').reduce((acc, t) => acc + t.totalTrackedTime, 0);
         distribution.push({ label: `T${weekNum}`, value: titMs + tunMs, titMs, tunMs });
@@ -126,7 +134,7 @@ export function useProductivityStats(tasks: Task[], timeRange: 'week' | 'month',
     const maxDist = Math.max(...distribution.map(d => d.value), 1);
 
     const hours: HourData[] = Array(24).fill(null).map(() => ({ tit: 0, tun: 0, total: 0 }));
-    currentTasks.forEach(t => {
+    currentTimedTasks.forEach(t => {
       const h = getHours(getTaskDate(t));
       const assignee = normalizeAssignee(t);
       if (assignee === 'tit') hours[h].tit += t.totalTrackedTime;
@@ -147,12 +155,12 @@ export function useProductivityStats(tasks: Task[], timeRange: 'week' | 'month',
     return {
       sessions,
       totalFocus: formatTime(totalFocusMs),
-      titTotal: formatTime(titTasks.reduce((acc, t) => acc + t.totalTrackedTime, 0)),
-      tunTotal: formatTime(tunTasks.reduce((acc, t) => acc + t.totalTrackedTime, 0)),
+      titTotal: formatTime(titTimedTasks.reduce((acc, t) => acc + t.totalTrackedTime, 0)),
+      tunTotal: formatTime(tunTimedTasks.reduce((acc, t) => acc + t.totalTrackedTime, 0)),
       onTimeRate,
-      lateCount: currentTasks.filter(t => t.status === 'completed_late').length,
-      titLate: titTasks.filter(t => t.status === 'completed_late').length,
-      tunLate: tunTasks.filter(t => t.status === 'completed_late').length,
+      lateCount: allCurrentTasks.filter(t => t.status === 'completed_late').length,
+      titLate: titAllTasks.filter(t => t.status === 'completed_late').length,
+      tunLate: tunAllTasks.filter(t => t.status === 'completed_late').length,
       changePct, distribution, maxDist, hours, maxHourMs, peakHour, bestDay,
       bestDayMs: formatTime(bestDayMsValue),
       totalFocusMs

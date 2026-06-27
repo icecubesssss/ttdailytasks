@@ -1,9 +1,6 @@
-import { db, appId } from '../firebase';
+import { supabase } from '../supabase';
 import { callGemini } from './ai';
 import { safeJsonParse, Task } from '../utils/helpers';
-import { doc, onSnapshot, setDoc, Unsubscribe } from 'firebase/firestore';
-
-const questDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'daily_quests', 'current');
 
 export interface DailyQuest {
   title: string;
@@ -22,12 +19,63 @@ export interface DailyQuest {
 export const subscribeToDailyQuest = (
   callback: (data: DailyQuest | null) => void, 
   onError?: (error: any) => void
-): Unsubscribe =>
-  onSnapshot(
-    questDocRef,
-    (snapshot) => callback(snapshot.exists() ? snapshot.data() as DailyQuest : null),
-    (error) => onError?.(error)
-  );
+) => {
+  supabase
+    .from('daily_quests')
+    .select('*')
+    .eq('id', 'current')
+    .single()
+    .then(({ data, error }) => {
+      if (error && error.code !== 'PGRST116') { // Ignore "no rows returned"
+        if (onError) onError(error);
+        return;
+      }
+      if (data) {
+        callback({
+          title: data.title,
+          goal: data.goal,
+          rewardGold: data.reward_gold,
+          deadline: data.deadline,
+          tone: data.tone,
+          dateKey: data.date_key,
+          updatedAt: data.updated_at,
+          isCompleted: data.is_completed,
+          completedBy: data.completed_by,
+          completedByName: data.completed_by_name,
+          completedAt: data.completed_at
+        } as DailyQuest);
+      } else {
+        callback(null);
+      }
+    });
+
+  const channel = supabase.channel('public:daily_quests')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'daily_quests', filter: 'id=eq.current' }, (payload: any) => {
+      const data = payload.new;
+      if (data) {
+        callback({
+          title: data.title,
+          goal: data.goal,
+          rewardGold: data.reward_gold,
+          deadline: data.deadline,
+          tone: data.tone,
+          dateKey: data.date_key,
+          updatedAt: data.updated_at,
+          isCompleted: data.is_completed,
+          completedBy: data.completed_by,
+          completedByName: data.completed_by_name,
+          completedAt: data.completed_at
+        } as DailyQuest);
+      } else {
+        callback(null);
+      }
+    })
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+};
 
 export const ensureDailyQuest = async (tasks: Task[] = [], options: { model?: string } = {}): Promise<DailyQuest> => {
   const todayKey = new Date().toISOString().slice(0, 10);
@@ -70,7 +118,21 @@ ${taskSummary || 'Không có task nào.'}`;
     updatedAt: Date.now()
   };
 
-  await setDoc(questDocRef, payload, { merge: true });
+  await supabase.from('daily_quests').upsert({
+    id: 'current',
+    title: payload.title,
+    goal: payload.goal,
+    reward_gold: payload.rewardGold,
+    deadline: payload.deadline,
+    tone: payload.tone,
+    date_key: payload.dateKey,
+    updated_at: payload.updatedAt,
+    is_completed: false,
+    completed_by: null,
+    completed_by_name: null,
+    completed_at: null
+  });
+
   return payload;
 };
 
@@ -82,6 +144,11 @@ export const completeDailyQuest = async (quest: DailyQuest | null, userId: strin
     completedByName: userName,
     completedAt: Date.now()
   };
-  await setDoc(questDocRef, payload, { merge: true });
+  await supabase.from('daily_quests').update({
+    is_completed: payload.isCompleted,
+    completed_by: payload.completedBy,
+    completed_by_name: payload.completedByName,
+    completed_at: payload.completedAt
+  }).eq('id', 'current');
   return payload;
 };

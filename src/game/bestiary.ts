@@ -4,6 +4,14 @@
  * KHÔNG sỉ nhục người chơi (bài học từ Finch: shame phản tác dụng).
  */
 
+import imgMoQuai from '../assets/monsters/mo_quai.png';
+import imgCuDem from '../assets/monsters/cu_dem.png';
+import imgMaTriHoan from '../assets/monsters/ma_tri_hoan.png';
+import imgZombieLuot from '../assets/monsters/zombie_luot.png';
+import imgQuaiThungVi from '../assets/monsters/quai_thung_vi.png';
+import imgSuongMuLoAu from '../assets/monsters/suong_mu_lo_au.png';
+import imgBangNguoiLanh from '../assets/monsters/bang_nguoi_lanh.png';
+
 export interface Monster {
   id: string;
   name: string;
@@ -11,6 +19,8 @@ export interface Monster {
   /** Identity tốt mà người chơi đang xây ("Người khỏe mạnh") */
   identity: string;
   identityEmoji: string;
+  /** Link ảnh tĩnh của quái vật */
+  imageUrl: string;
   /** Nhóm mục đích thói quen */
   purpose: string;
   /** Hue chủ đạo của card (tailwind color name) */
@@ -42,6 +52,7 @@ export const BESTIARY: Monster[] = [
     attackName: 'Dụ Dỗ Chăn Ấm',
     name: 'Mỡ Quái',
     emoji: '🦛',
+    imageUrl: imgMoQuai,
     identity: 'Người khỏe mạnh',
     identityEmoji: '💪',
     purpose: 'Vận động · Thể dục',
@@ -69,6 +80,7 @@ export const BESTIARY: Monster[] = [
     attackName: 'Cám Dỗ Một Tập Nữa',
     name: 'Cú Đêm',
     emoji: '🦉',
+    imageUrl: imgCuDem,
     identity: 'Người ngủ đủ giấc',
     identityEmoji: '🌙',
     purpose: 'Ngủ sớm · Dậy sớm',
@@ -95,6 +107,7 @@ export const BESTIARY: Monster[] = [
     attackName: 'Lời Nguyền Để Mai Tính',
     name: 'Ma Trì Hoãn',
     emoji: '👻',
+    imageUrl: imgMaTriHoan,
     identity: 'Người ham học',
     identityEmoji: '📚',
     purpose: 'Học tập · Đọc sách · Kỹ năng',
@@ -122,6 +135,7 @@ export const BESTIARY: Monster[] = [
     attackName: 'Vuốt Vô Tận',
     name: 'Zombie Lướt',
     emoji: '🧟',
+    imageUrl: imgZombieLuot,
     identity: 'Người sống tỉnh táo',
     identityEmoji: '🧠',
     purpose: 'Digital detox · Bớt mạng xã hội',
@@ -148,6 +162,7 @@ export const BESTIARY: Monster[] = [
     attackName: 'Tiếng Gọi Flash Sale',
     name: 'Quái Thủng Ví',
     emoji: '🕳️',
+    imageUrl: imgQuaiThungVi,
     identity: 'Người vững tài chính',
     identityEmoji: '💰',
     purpose: 'Tiết kiệm · Tài chính',
@@ -174,6 +189,7 @@ export const BESTIARY: Monster[] = [
     attackName: 'Màn Sương Nhỡ Đâu',
     name: 'Sương Mù Lo Âu',
     emoji: '🌫️',
+    imageUrl: imgSuongMuLoAu,
     identity: 'Người an yên',
     identityEmoji: '🧘',
     purpose: 'Thiền · Journal · Tinh thần',
@@ -200,6 +216,7 @@ export const BESTIARY: Monster[] = [
     attackName: 'Hơi Thở Nguội Lạnh',
     name: 'Băng Nguội Lạnh',
     emoji: '🧊',
+    imageUrl: imgBangNguoiLanh,
     identity: 'Cặp đôi gắn bó',
     identityEmoji: '💞',
     purpose: 'Thói quen đôi · Tình cảm',
@@ -224,10 +241,10 @@ export const getMonster = (id: string): Monster =>
 
 /** Trạng thái hình ảnh của quái theo điểm tự động hóa của thói quen */
 export const MONSTER_STAGES = [
-  { label: 'HUNG HĂNG', scale: 'text-6xl', desc: 'Quái đang rất mạnh!' },
-  { label: 'GIẰNG CO', scale: 'text-5xl', desc: 'Cuộc chiến cân tài cân sức' },
-  { label: 'RUN RẨY', scale: 'text-4xl', desc: 'Quái bắt đầu sợ bạn rồi' },
-  { label: 'TEO TÓP', scale: 'text-3xl', desc: 'Sắp phong ấn được rồi!' }
+  { label: 'HUNG HĂNG', scale: 'scale-110', desc: 'Quái đang rất mạnh!' },
+  { label: 'GIẰNG CO', scale: 'scale-100', desc: 'Cuộc chiến cân tài cân sức' },
+  { label: 'RUN RẨY', scale: 'scale-90', desc: 'Quái bắt đầu sợ bạn rồi' },
+  { label: 'TEO TÓP', scale: 'scale-75', desc: 'Sắp phong ấn được rồi!' }
 ] as const;
 
 export const pickLine = (lines: string[], seed: number): string =>

@@ -4,10 +4,17 @@
  * Đây là cơ chế "party quest" (Habitica) thu nhỏ cho 2 người.
  */
 
+import imgBossLuoiVuong from '../assets/monsters/boss_luoi_vuong.png';
+import imgBossRongDeadline from '../assets/monsters/boss_rong_deadline.png';
+import imgBossBaTuocTriTre from '../assets/monsters/boss_ba_tuoc_tri_tre.png';
+import imgBossQuyBuaBon from '../assets/monsters/boss_quy_bua_bon.png';
+import imgBossMaXaoNhang from '../assets/monsters/boss_ma_xao_nhang.png';
+
 export interface WeeklyBossConfig {
   id: string;
   name: string;
   emoji: string;
+  imageUrl: string;
   intro: string;
   defeatLine: string;
 }
@@ -17,6 +24,7 @@ export const BOSS_ROSTER: WeeklyBossConfig[] = [
     id: 'luoi_vuong',
     name: 'Lười Vương',
     emoji: '🦥',
+    imageUrl: imgBossLuoiVuong,
     intro: 'Khừm... tuần này cứ từ từ, việc đâu có chạy đi đâu~',
     defeatLine: 'Hai đứa này... chăm gì mà chăm dữ vậy... 😵'
   },
@@ -24,6 +32,7 @@ export const BOSS_ROSTER: WeeklyBossConfig[] = [
     id: 'rong_deadline',
     name: 'Rồng Deadline',
     emoji: '🐲',
+    imageUrl: imgBossRongDeadline,
     intro: 'GRAOO! Deadline của các ngươi là bữa sáng của ta!',
     defeatLine: 'Không thể nào... các ngươi xong việc ĐÚNG HẠN?!'
   },
@@ -31,6 +40,7 @@ export const BOSS_ROSTER: WeeklyBossConfig[] = [
     id: 'ba_tuoc_tri_tre',
     name: 'Bá Tước Trì Trệ',
     emoji: '🧛',
+    imageUrl: imgBossBaTuocTriTre,
     intro: 'Ta sống bằng những việc "để mai tính" của các ngươi, khe khe~',
     defeatLine: 'Năng suất... ánh sáng năng suất... chói quá... 🦇'
   },
@@ -38,6 +48,7 @@ export const BOSS_ROSTER: WeeklyBossConfig[] = [
     id: 'quy_bua_bon',
     name: 'Quỷ Bừa Bộn',
     emoji: '👹',
+    imageUrl: imgBossQuyBuaBon,
     intro: 'Kế hoạch là để vứt xó! Cứ rối tung lên cho ta!',
     defeatLine: 'Ngăn nắp vậy thì ta sống sao nổi... 😵'
   },
@@ -45,6 +56,7 @@ export const BOSS_ROSTER: WeeklyBossConfig[] = [
     id: 'ma_xao_nhang',
     name: 'Ma Xao Nhãng',
     emoji: '🎭',
+    imageUrl: imgBossMaXaoNhang,
     intro: 'Ơ kìa nhìn gì đó kìa— mất tập trung chưa? Hehe~',
     defeatLine: 'Focus của hai người... đáng sợ thật... 💨'
   }

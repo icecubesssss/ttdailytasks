@@ -89,7 +89,7 @@ export default function GridView({
               {isToday(day) && <TimeNowIndicator />}
 
               <div className="absolute inset-0">
-                {getEventsForDay(day).map(e => <EventBlock key={e.id} event={e} isDark={isDark} />)}
+                {getEventsForDay(day).map(e => <EventBlock key={e.id} event={e} />)}
                 {getTasksForDay(day).map(t => <TaskDeadlineMarker key={t.id} task={t} isDark={isDark} />)}
               </div>
             </div>

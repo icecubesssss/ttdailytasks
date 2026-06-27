@@ -1,8 +1,8 @@
 import React from 'react';
 import { X, Scissors, Sparkles, User2, CheckCircle2 } from 'lucide-react';
-import { getAvatarUrl, getAssigneeIdByEmail } from '../../utils/helpers';
-import { DEFAULT_AVATARS, FASHION_OPTIONS } from '../../utils/constants';
-import type { UserData, LevelInfo, FashionOption } from '../../utils/helpers';
+import { getAvatarUrl, getDefaultAvatar } from '../../utils/helpers';
+import { FASHION_OPTIONS } from '../../utils/constants';
+import type { UserData, LevelInfo, AvatarConfig } from '../../utils/helpers';
 
 interface ClosetViewProps {
   userData: UserData;
@@ -15,8 +15,8 @@ interface ClosetViewProps {
 
 const WARDROBE_CATEGORIES = ['hair', 'hairColor', 'skinColor', 'eyes', 'mouth', 'facialHair', 'body', 'clothingColor'];
 
-const getAvatarPreviewSrc = (userData, userEmail) => {
-  const avatarConfig = userData.avatarConfig || DEFAULT_AVATARS[getAssigneeIdByEmail(userEmail)] || { seed: userData.displayName };
+const getAvatarPreviewSrc = (userData: UserData, userEmail: string) => {
+  const avatarConfig = userData.avatarConfig || getDefaultAvatar(userEmail) || { seed: userData.displayName };
   const cacheKey = avatarConfig.avatarVersion ?? JSON.stringify(avatarConfig);
   return `${getAvatarUrl(avatarConfig)}&v=${encodeURIComponent(cacheKey)}`;
 };
@@ -28,7 +28,7 @@ export default function ClosetView({ userData, levelInfo, isDark, userEmail, onE
     <div className="animate-in slide-in-from-right-8 duration-500 space-y-8 pb-10">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-xl font-black uppercase tracking-tighter">Phòng Thay Đồ</h3>
-        <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"><X size={24} /></button>
+        <button aria-label="Đóng" onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"><X size={24} /></button>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className={`lg:col-span-1 p-8 rounded-[3rem] ${isDark ? 'bg-slate-900/80 border border-slate-800' : 'bg-white border border-slate-100 shadow-xl'} flex flex-col items-center justify-center text-center sticky top-20`}>
@@ -55,7 +55,7 @@ export default function ClosetView({ userData, levelInfo, isDark, userEmail, onE
               </h5>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {FASHION_OPTIONS[cat].map(item => {
-                  const isEquipped = userData.avatarConfig?.[cat] === item.value;
+                  const isEquipped = userData.avatarConfig?.[cat as keyof AvatarConfig] === item.value;
                   return (
                     <button
                       key={item.id}

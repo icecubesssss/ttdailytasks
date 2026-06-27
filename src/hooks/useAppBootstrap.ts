@@ -1,60 +1,64 @@
 import { useEffect, useState, useRef } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth, isDummyConfig } from '../firebase';
+import { supabase } from '../supabase';
 import * as taskService from '../services/taskService';
 import * as userService from '../services/userService';
-import { Task } from '../utils/helpers';
+import { Task, AppUser } from '../utils/helpers';
+
+export type { AppUser };
 
 interface UseAppBootstrapProps {
   setTasks: (tasks: Task[] | ((prev: Task[]) => Task[])) => void;
 }
 
 interface UseAppBootstrapReturn {
-  user: User | null;
+  user: AppUser | null;
   authError: string | null;
   isLoading: boolean;
   isTasksLoaded: boolean;
 }
 
-interface LocalUser {
-  uid: string;
-  isAnonymous: boolean;
-  displayName: string;
-  email: string;
-}
-
-const LOCAL_USER_TEST_UID = 'local-user-test';
-
-const isFirebaseUser = (candidate: User | LocalUser | null): candidate is User => {
-  if (!candidate) return false;
-  return candidate.uid !== LOCAL_USER_TEST_UID;
+const mapSupabaseUser = (u: any): AppUser | null => {
+  if (!u) return null;
+  return {
+    uid: u.id,
+    email: u.email || null,
+    displayName: u.user_metadata?.displayName || u.user_metadata?.full_name || null,
+    photoURL: u.user_metadata?.photoURL || u.user_metadata?.avatar_url || null,
+    isAnonymous: false
+  };
 };
 
 export const useAppBootstrap = ({ setTasks }: UseAppBootstrapProps): UseAppBootstrapReturn => {
-  const [user, setUser] = useState<User | LocalUser | null>(() => (
-    isDummyConfig ? { uid: LOCAL_USER_TEST_UID, isAnonymous: true, displayName: 'Guest', email: 'guest@example.com' } : null
-  ));
-  const [authError, setAuthError] = useState<string | null>(() => (
-    isDummyConfig ? "Chỉ chạy cục bộ do lỗi API Key." : null
-  ));
-  const [isLoading, setIsLoading] = useState(!isDummyConfig);
+  const [user, setUser] = useState<AppUser | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isTasksLoaded, setIsTasksLoaded] = useState(false);
   const isTasksLoadedRef = useRef(false);
 
   useEffect(() => {
-    if (isDummyConfig) return;
+    // 1. Check current session
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        setAuthError(error.message);
+      } else if (session?.user) {
+        setUser(mapSupabaseUser(session.user));
+      }
+      setIsLoading(false);
+    });
 
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
+    // 2. Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        const appUser = mapSupabaseUser(session.user);
+        setUser(appUser);
         setAuthError(null);
-        if (!currentUser.isAnonymous) {
+        if (appUser) {
           try {
-            await userService.registerTeamMember(currentUser.uid, {
-              uid: currentUser.uid,
-              displayName: currentUser.displayName ?? undefined,
-              photoURL: currentUser.photoURL ?? undefined,
-              email: currentUser.email ?? undefined,
+            await userService.registerTeamMember(appUser.uid, {
+              uid: appUser.uid,
+              displayName: appUser.displayName || undefined,
+              photoURL: appUser.photoURL || undefined,
+              email: appUser.email || undefined,
             });
           } catch (err) {
             console.error("Error registering team member:", err);
@@ -65,26 +69,28 @@ export const useAppBootstrap = ({ setTasks }: UseAppBootstrapProps): UseAppBoots
       }
       setIsLoading(false);
     });
-    return () => unsubscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
-    if (!isFirebaseUser(user)) return;
+    if (!user) return;
     const unsubscribe = taskService.subscribeToTasks((tasks) => {
       setTasks(tasks);
-      // Mark tasks as loaded after first snapshot (even if empty)
       if (!isTasksLoadedRef.current) {
         isTasksLoadedRef.current = true;
         setIsTasksLoaded(true);
       }
     }, (error) => {
-      setAuthError("Firestore Read Error: " + error.message);
+      setAuthError("Supabase Read Error: " + error.message);
     });
     return () => { if (unsubscribe) unsubscribe(); };
   }, [user, setTasks]);
 
   return {
-    user: isFirebaseUser(user) ? user : null,
+    user,
     authError,
     isLoading,
     isTasksLoaded
